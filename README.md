@@ -1,2 +1,2 @@
 # Compilador Galm
-Feito para a disciplina de Compiladores da UFRRJ.
+Compilador da linguagem Galm feito para a disciplina de Compiladores da UFRRJ.
