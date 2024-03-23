@@ -7,35 +7,40 @@ DIGIT [0-9]
 LETTER [A-Za-z]
 UNDERSCORE _
 
-INT ({DIGIT})+
+NUMBER ({DIGIT})+
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
+
+TYPES "number"|"boolean"|"string"
+OTHER_TYPES "void"|"null"|"undefined"
 
 %%
 
-[ \t]       { /* ignore whitespace */                       } 
-"\n"        { /* ignorar break line */                      }
+[ \t]           { /* ignore whitespace */                       } 
+"\n"            { /* ignorar break line */                      }
 
-"main"      { return TK_MAIN;                               }
+"main"          { return TK_MAIN;                               }
 
-"number"    { yylval.label = *yytext; return TK_TYPE;       }
-"boolean"   { yylval.label = *yytext; return TK_TYPE;       }
-"void"      { yylval.label = *yytext; return TK_TYPE;       }
-"null"      { yylval.label = *yytext; return TK_TYPE;       }
-"undefined" { yylval.label = *yytext; return TK_TYPE;       }
+{TYPES}("[]")*  { yylval.label = yytext; return TK_TYPE;        }
+{OTHER_TYPES}   { yylval.label = yytext; return TK_TYPE;        }
 
-[+\-*/|]    { return *yytext;                               }
-[(){}[\]]   { return *yytext;                               }
-[;,~:=]     { return *yytext;                              }
+[+\-*/|]        { return *yytext;                               }
+[(){}[\]]       { return *yytext;                               }
+[;,~:=]         { return *yytext;                               }
 
-"if"        { return TK_IF;                                 }
+"if"            { return TK_IF;                                 }
+"else"          { return TK_ELSE;                               }
 
-"let"       { return TK_LET;                                }
-"const"     { return TK_CONST;                              }
+"function"      { return TK_FUNCTION;                           }
+"let"           { return TK_LET;                                }
+"const"         { return TK_CONST;                              }
 
-"true"      { return TK_TRUE;                               }
-"false"     { return TK_FALSE;                              }
+"and"           { return TK_AND;                                }
+"or"            { return TK_OR;                                 }
 
-{INT}		{ yylval.label = atoi(yytext); return TK_NUM;   }
-{ID}		{ yylval.label = yytext; return TK_ID;          }
+"true"          { yylval.label = yytext; return TK_TRUE;        }
+"false"         { yylval.label = yytext; return TK_FALSE;       }
+
+{NUMBER}	    { yylval.label = yytext; return TK_NUMBER;      }
+{ID}		    { yylval.label = yytext; return TK_ID;          }
 
 %%
