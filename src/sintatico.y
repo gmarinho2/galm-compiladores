@@ -9,7 +9,6 @@
 using namespace variaveis;
 
 int yylex(void);
-void yyerror(string); 
 %}
 
 %token TK_ID TK_NUMBER
@@ -38,8 +37,8 @@ void yyerror(string);
  * The first rule is the start symbol
  */
 
-S   : TK_FUNCTION TK_MAIN FUNCTION_PARAMS ':' TK_TYPE COMMANDS { 
-        cout << gerarCodigo($6.translation) << endl;
+S   : TK_FUNCTION TK_MAIN FUNCTION_STRUCTURE COMMANDS { 
+        cout << gerarCodigo($4.translation) << endl;
     }
     | COMMANDS {
         cout << gerarCodigo($1.translation) << endl;
@@ -48,6 +47,13 @@ S   : TK_FUNCTION TK_MAIN FUNCTION_PARAMS ':' TK_TYPE COMMANDS {
 /**
  * Parameters
  */
+
+ FUNCTION_STRUCTURE: FUNCTION_PARAMS ':' TK_TYPE {
+                        cout << "função com parametros e tipo" << endl;
+                    }
+                    | FUNCTION_PARAMS {
+                        cout << "função com parametros sem tipo" << endl;
+                    }
 
 FUNCTION_PARAMS: '(' PARAMS ')' { cout << "parametros de função" << endl; }
 
@@ -73,16 +79,10 @@ COMMAND : COMMAND ';' {
         }
         | EXPRESSION {
             $$ = $1;
-            cout << "expressao" << $1.label << " " << $1.type << endl;
         }
         | TK_CONST TK_ID ':' TK_TYPE '=' EXPRESSION {
-            if (false) {
-                yyerror("Cannot found symbol \"" + $2.label + "\"");
-                return -1;
-            }
-
             if ($4.label != $6.type) {
-                yyerror("Type mismatch");
+                yyerror("The type of the expression (" + $6.type + ") is not compatible with the type of the variable (" + $4.label + ")");
                 return -1;
             }
 
@@ -93,66 +93,90 @@ COMMAND : COMMAND ';' {
                 return -1;
             }
 
+            createVariableIfNotExists($2.label, $4.label, $6.label, true);
+
             $$.label = $2.label;
             $$.type = $4.label;
-            $$.translation = $6.translation + "\t" + currentType + " " + $2.label + " = " + $6.label + ";\n";
+            $$.translation = $4.translation + "\t" + $2.label + " = " + $6.label + ";\n";
         }
-        | TK_LET TK_ID ':' TK_TYPE '=' EXPRESSION { cout << "declaracao let com tipo" << endl; }
-        | TK_CONST TK_ID ':' TK_TYPE '[' ']' '=' EXPRESSION { cout << "declaracao const com tipo array" << endl; }
-        | TK_LET TK_ID ':' TK_TYPE '[' ']' '=' EXPRESSION { cout << "declaracao let com tipo array" << endl; }
-        | TK_CONST TK_ID '=' EXPRESSION { cout << "declaracao const sem tipo" << endl; }
-        | TK_LET TK_ID '=' EXPRESSION { cout << "declaracao let sem tipo" << endl; }
+        | TK_LET TK_ID ':' TK_TYPE '=' EXPRESSION {
+            if (false) {
+                yyerror("Cannot found symbol \"" + $2.label + "\"");
+                return -1;
+            }
+
+            if ($4.label != $6.type) {
+                yyerror("The type of the expression (" + $6.type + ") is not compatible with the type of the variable (" + $4.label + ")");
+                return -1;
+            }
+
+            createVariableIfNotExists($2.label, $4.label, $6.label);
+            
+            $$.label = $2.label;
+            $$.type = $4.label;
+            $$.translation = $6.translation + "\t" + $2.label + " = " + $6.label + ";\n";
+        }
+        | TK_CONST TK_ID '=' EXPRESSION {
+            createVariableIfNotExists($2.label, $4.type, $4.label, true);
+
+            $$.label = $2.label;
+            $$.type = $4.type;
+            $$.translation = $4.translation + "\t" + $2.label + " = " + $4.label + ";\n";
+        }
+        | TK_LET TK_ID '=' EXPRESSION {
+            createVariableIfNotExists($2.label, $4.type, $4.label);
+
+            $$.label = $2.label;
+            $$.type = $4.type;
+            $$.translation = $4.translation + "\t" + $2.label + " = " + $4.label + ";\n";
+        }
 
 /**
  * Expressions
  */
 
-EXPRESSION  : EXPRESSION '*' EXPRESSION { 
+EXPRESSION  : EXPRESSION '*' EXPRESSION {
                 if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("Type mismatch");
+                    yyerror("The operator * must be used with a number type");
                     return -1;
                 }
 
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
-                cout << $$.translation << endl;
             }
             | EXPRESSION '/' EXPRESSION { 
                 if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("Type mismatch");
+                    yyerror("The operator / must be used with a number type");
                 }
 
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
-                cout << $$.translation << endl;
             }
             | EXPRESSION '+' EXPRESSION { 
                 if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("Type mismatch");
+                    yyerror("The operator + must be used with a number type");
                     return -1;
                 }
 
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
-                cout << "soma" << $1.label << " " << $1.type << endl;
             }
             | EXPRESSION '-' EXPRESSION { 
                 if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("Type mismatch");
+                    yyerror("The operator - must be used with a number type");
                     return -1;
                 }
 
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
-                cout << $$.translation << endl;
             }
             | '!' EXPRESSION { 
                 if ($2.type != BOOLEAN_ID) {
-                    yyerror("Type mismatch");
+                    yyerror("The operator ! must be used with a boolean type");
                     return -1;
                 }
 
@@ -161,7 +185,7 @@ EXPRESSION  : EXPRESSION '*' EXPRESSION {
                 $$.translation = $2.translation + "\t" + $$.label + " = !" + $2.label + ";\n";
                 cout << $$.translation << endl;
             }
-            | EXPRESSION TK_AND EXPRESSION { 
+            | EXPRESSION TK_AND EXPRESSION {
                 if ($1.type != BOOLEAN_ID || $3.type != BOOLEAN_ID) { // TEM QUE VERIFICAR COMPATIBILIDADE
                     yyerror("Boolean and type mismatch");
                     return -1;
@@ -178,8 +202,6 @@ EXPRESSION  : EXPRESSION '*' EXPRESSION {
                     return -1;
                 }
 
-                //TODO: implementar absolute operator
-
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = $2.translation + "\t" + $$.label + " = " + $2.label + ";\n";
@@ -190,15 +212,31 @@ EXPRESSION  : EXPRESSION '*' EXPRESSION {
                 // se estiver, pegar o tipo e verificar se é compatível
                 // se não estiver, mandar erro
 
-                if (false) {
+                bool found = false;
+                Variavel variavel = findVariableByName($1.label, found);
+
+                if (!found) {
                     yyerror("Cannot found symbol \"" + $1.label + "\"");
                     return -1;
                 }
-                
+
+                if (variavel.getVarType() != $3.type) {
+                    yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel.getVarType() + ")");
+                    return -1;
+                }
+
+                if (variavel.isConstant()) {
+                    yyerror("Cannot assign a value to a constant variable");
+                    return -1;
+                }
+
+                cout << $1.label << " " << $3.label << " " << $3.type << endl;
+
+                variavel.setVarValue($3.label);
+
                 $$.label = $1.label;
                 $$.type = $1.type;
                 $$.translation = $1.translation + $3.translation + "\t" + $1.label + " = " + $3.label + ";\n";
-                cout << $$.translation << endl;
             }
             | TK_TRUE { 
                 $$.label = gentempcode();
@@ -216,11 +254,20 @@ EXPRESSION  : EXPRESSION '*' EXPRESSION {
                 $$.label = gentempcode();
                 $$.type = NUMBER_ID;
                 $$.translation = "\t" + $$.label + " = " + $1.label + ";\n";
-                cout << $1.label << " " << $1.type << endl;
             }
             | TK_ID { 
-                $$ = $1;
-             } ;
+                bool found = false;
+                Variavel variavel = findVariableByName($1.label, found);
+
+                if (!found) {
+                    yyerror("Cannot found symbol \"" + $1.label + "\"");
+                    return -1;
+                }
+
+                $$.label = variavel.getVarValue();
+                $$.type = variavel.getVarType();
+                $$.translation = "\t" + $$.label + " = " + $1.label + ";\n";
+             };
 
 /** Control structures 
  *
@@ -237,11 +284,5 @@ int main(int argc, char* argv[])
 	yyparse();
 
 	return 0;
-}
-
-void yyerror(string message)
-{
-    cout << message << endl;
-	exit (0);
 }
 

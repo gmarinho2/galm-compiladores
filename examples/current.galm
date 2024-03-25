@@ -1,2 +1,4 @@
-const test: boolean = true and false
-const test2: number = 1
+let i = 0;
+i = i + 1;
+let opa = 5;
+let opa4 = 5;

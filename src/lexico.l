@@ -20,13 +20,6 @@ OTHER_TYPES "void"|"null"|"undefined"
 
 "main"          { return TK_MAIN;                               }
 
-{TYPES}("[]")*  { yylval.label = yytext; return TK_TYPE;        }
-{OTHER_TYPES}   { yylval.label = yytext; return TK_TYPE;        }
-
-[+\-*/|]        { return *yytext;                               }
-[(){}[\]]       { return *yytext;                               }
-[;,~:=]         { return *yytext;                               }
-
 "if"            { return TK_IF;                                 }
 "else"          { return TK_ELSE;                               }
 
@@ -36,6 +29,13 @@ OTHER_TYPES "void"|"null"|"undefined"
 
 "and"           { return TK_AND;                                }
 "or"            { return TK_OR;                                 }
+
+[+\-*/|]        { return *yytext;                               }
+[(){}[\]]       { return *yytext;                               }
+[;,~:=]         { return *yytext;                               }
+
+{TYPES}("[]")*  { yylval.label = yytext; return TK_TYPE;        }
+{OTHER_TYPES}   { yylval.label = yytext; return TK_TYPE;        }
 
 "true"          { yylval.label = yytext; return TK_TRUE;        }
 "false"         { yylval.label = yytext; return TK_FALSE;       }

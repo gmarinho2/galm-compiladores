@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -11,17 +12,6 @@ namespace variaveis {
     const string BOOLEAN_ID = "boolean";
     const string STRING_ID = "string";
 
-    typedef struct
-    {
-        string label;
-        string type;
-        string translation;
-    } Atributo;
-
-    string gentempcode() {
-        return "t" + std::to_string(++tempCodeCounter);
-    }
-
     string getTypeCodeById(string id) {
         if (id == NUMBER_ID) {
             return "int";
@@ -30,15 +20,111 @@ namespace variaveis {
         } else if (id == STRING_ID) {
             return "string";
         }
+        
         return "";
     }
 
+    typedef struct {
+        string label;
+        string type;
+        string translation;
+    } Atributo;
+    
+    class Variavel {
+        private:
+            string varName;
+            string varType;
+            string varValue;
+            bool constant;
+        public:
+            Variavel(string varName, string varType, string varValue, bool constant) {
+                this->varName = varName;
+                this->varType = varType;
+                this->varValue = varValue;
+                this->constant = constant;
+            }
+
+            string getVarName() {
+                return varName;
+            }
+
+            string getVarValue() {
+                return varValue;
+            }
+
+            void setVarValue(string value) {
+                this->varValue = value;
+            }
+
+            string getVarType() {
+                return varType;
+            }
+
+            bool isConstant() {
+                return constant;
+            }
+
+            string getTranslation() {
+                return getTypeCodeById(varType) + " " + varName;
+            }
+
+    };
+
+    const Variavel NULL_VAR = {"", "", "", false};
+
+    vector<Variavel> variaveis;
+
+    string gentempcode() {
+        tempCodeCounter++;
+        return "t" + std::to_string(tempCodeCounter);
+    }
+
     string gerarCodigo(string codigo) {
-        return "/*Compilador GALM*/\n"
+        for (int i = 0; i < variaveis.size(); i++) {
+            codigo =  "\t" + variaveis[i].getTranslation() + ";\n" + codigo;
+        }
+
+        return "/* Compilador GALM */\n"
                     "#include <iostream>\n"
                     "int main(void) {\n" +
                     codigo +
                     "\treturn 0;\n"
                     "}";
     }
+    
+    void yyerror(string message) {
+        cout << "\033[1;31mSyntax error: " << message << endl << "\033[0m";
+        exit(1);
+    }
+
+    /**
+     * Função que retorna uma variável a partir do nome
+     * Ela busca na tabela de simbolos e retorna a variável
+     * Caso não encontre, retorna uma instância sem nada e com o atributo found como false
+     */
+
+    Variavel findVariableByName(string varName, bool &found) {
+        for (int i = 0; i < variaveis.size(); i++)
+            if (variaveis[i].getVarName() == varName) {
+                found = true;
+                return variaveis[i];
+            }
+
+        return NULL_VAR;
+    }
+
+    Variavel createVariableIfNotExists(string varName, string type, string value, bool isConst = false,  bool isGlobal = false) {
+        bool found = false;
+        findVariableByName(varName, found);
+        
+        if (!found) {
+            Variavel var = {varName, type, value, isConst};
+            variaveis.push_back(var);
+            return var;
+        }
+
+        yyerror("The symbol \"" + varName + "\" is already declared");
+        return NULL_VAR;
+    }
+
 };
