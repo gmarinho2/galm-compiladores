@@ -1,7 +1,7 @@
 let n: string = "ola"
 
 fn test(a: number) {
-    let b: number = 1;
+    let t0: number = 1;
 }
 
 test()

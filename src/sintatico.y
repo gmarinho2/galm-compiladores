@@ -25,6 +25,8 @@ int yylex(void);
 
 %token TK_SIMILAR TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
+%token TK_FORBIDDEN
+
 %start S
 
 %right '='
@@ -69,41 +71,43 @@ COMMAND             : COMMAND ';' {
                         $$ = $1;
                     }
 
+ID                  : TK_FORBIDDEN {
+                        yyerror("You are trying to use a reserved key \"" + $1.label + "\".");
+                    }
+                    | TK_ID {
+                        $$ = $1;
+                    }
+
 /**
  * Functions
  */
 
- FUNCTION           : TK_FUNCTION TK_ID '(' PARAMETERS ')' RETURN_TYPE '{' COMMANDS '}' {
-                        cout << "Função" << endl;
+ FUNCTION           : TK_FUNCTION ID '(' PARAMETERS ')' RETURN_TYPE '{' COMMANDS '}' { // Declaração da função
                         $$.translation = $6.label + " " + $2.label + "(" + $4.translation + ") {\n" + indent($8.translation) + "\t}\n";
                     }
-                    | TK_ID '(' ARGUMENTS ')' {
-                        cout << "Chamada função" << endl;
-
+                    | ID '(' ARGUMENTS ')' { // Chamada da função
                         $$.translation = $1.label + "(" + $3.translation + ");\n";
                     }
 
-ARGUMENTS           : TK_ID {
+ARGUMENTS           : ID { // (arg1)
                         cout << "Argumento" << endl;
                     }
-                    | TK_ID ',' ARGUMENTS {
+                    | ID ',' ARGUMENTS { // (arg1, arg2)
                         cout << "Argumento" << endl;
                     }
-                    | { cout << "Vazio" << endl; $$.translation = ""; }
+                    | { $$.translation = ""; }
 
-PARAMETERS          : TK_ID RETURN_TYPE {
-                        cout << "Parâmetro" << endl;
+PARAMETERS          : ID RETURN_TYPE {
                         $$.translation = $2.type + " " + $1.label ;
                     }
-                    | TK_ID RETURN_TYPE ',' PARAMETERS {
-                        cout << "Parâmetro" << endl;
+                    | ID RETURN_TYPE ',' PARAMETERS {
                         $$.translation =  $2.type + " " + $1.label + ", " + $4.translation;
                     }
-                    | { cout << "Vazio" << endl; $$.translation = ""; }
+                    | { $$.translation = ""; }
 
 RETURN_TYPE         : ':' TK_TYPE { $$.type = $2.label; }
                     | ':' TK_VOID { $$.type = "void"; }
-                    | { cout << "Vazio" << endl; $$.type = "void"; }
+                    | { $$.type = "void"; }
 
  /**
  * Expressions
@@ -114,7 +118,7 @@ EXPRESSION          : ARITMETIC { $$ = $1; }
                     | RELATIONAL { $$ = $1; }
                     | ASSIGNMENT { $$ = $1; }
                     | TYPES { $$ = $1; }
-                    | TK_ID {
+                    | ID {
                         bool found = false;
                         Variavel variavel = findVariableByName($1.label, found);
 
@@ -126,13 +130,13 @@ EXPRESSION          : ARITMETIC { $$ = $1; }
                         $$.label = gentempcode();
                         $$.type = variavel.getVarType();
                         $$.translation = $$.label + " = " + $1.label + ";\n";
-                    };
+                    }
 
 /**
  * Variables
  */
 
-VARIABLE_DECLARATION: TK_LET TK_ID RETURN_TYPE '=' EXPRESSION {
+VARIABLE_DECLARATION: TK_LET ID RETURN_TYPE '=' EXPRESSION {
                         if ($3.type != "void" && $3.type != $5.type) {
                             yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
                             return -1;
@@ -144,7 +148,7 @@ VARIABLE_DECLARATION: TK_LET TK_ID RETURN_TYPE '=' EXPRESSION {
                         $$.type = $4.label;
                         $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
                     }
-                    | TK_CONST TK_ID RETURN_TYPE '=' EXPRESSION {
+                    | TK_CONST ID RETURN_TYPE '=' EXPRESSION {
                         if ($3.type != "void" && $3.type != $5.type) {
                             yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
                             return -1;
@@ -157,7 +161,7 @@ VARIABLE_DECLARATION: TK_LET TK_ID RETURN_TYPE '=' EXPRESSION {
                         $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
                     };
 
-ASSIGNMENT          : TK_ID '=' EXPRESSION { 
+ASSIGNMENT          : ID '=' EXPRESSION { 
                         bool found = false;
                         Variavel variavel = findVariableByName($1.label, found);
 

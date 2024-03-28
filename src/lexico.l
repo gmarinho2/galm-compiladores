@@ -15,11 +15,13 @@ ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 TYPES "number"|"boolean"|"char"|"string"
 OTHER_TYPES "void"|"null"|"undefined"
 
+RESERVED_KEYS ("int"|"t"{NUMBER})
+
 %%
 
 {SPACE}+        { /* ignore whitespace */                       }
 "\n"            { /* ignorar break line */                      }
-"int"           { /* ignorar break line */                      }
+{RESERVED_KEYS} { yylval.label = yytext; return TK_FORBIDDEN;   }
 
 "main"          { return TK_MAIN;                               }
 
