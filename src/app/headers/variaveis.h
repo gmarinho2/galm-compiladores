@@ -87,16 +87,16 @@ namespace variaveis {
     }
 
     string gerarCodigo(string codigo) {
+        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
+
         for (int i = 0; i < variaveis.size(); i++) {
-            codigo =  "\t" + variaveis[i].getTranslation() + ";\n" + codigo;
+            compilador += variaveis[i].getTranslation() + ";\n";
         }
 
-        return "/* Compilador GALM */\n\n"
-                    "#include <iostream>\n\n"
-                    "int main(void) {\n" +
-                    codigo +
-                    "\treturn 0;\n"
-                    "}";
+        compilador += "\nint main(void) {\n" + codigo + "\treturn 0;\n}";
+
+
+        return compilador;
     }
 
     void yyerror(string message, string error = "Syntax error") {

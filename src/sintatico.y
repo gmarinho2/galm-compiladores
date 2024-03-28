@@ -101,7 +101,7 @@ PARAMETERS          : TK_ID RETURN_TYPE {
                     }
                     | { cout << "Vazio" << endl; $$.translation = ""; }
 
-RETURN_TYPE        : ':' TK_TYPE { $$.type = $2.label; }
+RETURN_TYPE         : ':' TK_TYPE { $$.type = $2.label; }
                     | ':' TK_VOID { $$.type = "void"; }
                     | { cout << "Vazio" << endl; $$.type = "void"; }
 
