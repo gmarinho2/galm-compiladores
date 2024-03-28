@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "str.h"
 
-using namespace std;
+using namespace str;
 
 #pragma once
 namespace variaveis {
@@ -11,6 +12,7 @@ namespace variaveis {
     const string NUMBER_ID = "number";
     const string BOOLEAN_ID = "boolean";
     const string STRING_ID = "string";
+    const string CHAR_ID = "char";
 
     string getTypeCodeById(string id) {
         if (id == NUMBER_ID) {
@@ -60,12 +62,16 @@ namespace variaveis {
                 return varType;
             }
 
+            string getRealVarType() {
+                return getTypeCodeById(varType);
+            }
+
             bool isConstant() {
                 return constant;
             }
 
             string getTranslation() {
-                return getTypeCodeById(varType) + " " + varName;
+                return getRealVarType() + " " + varName;
             }
 
     };
@@ -76,7 +82,7 @@ namespace variaveis {
 
     string gentempcode() {
         tempCodeCounter++;
-        return "t" + std::to_string(tempCodeCounter);
+        return "t" + to_string(tempCodeCounter);
     }
 
     string gerarCodigo(string codigo) {
@@ -84,16 +90,16 @@ namespace variaveis {
             codigo =  "\t" + variaveis[i].getTranslation() + ";\n" + codigo;
         }
 
-        return "/* Compilador GALM */\n"
-                    "#include <iostream>\n"
+        return "/* Compilador GALM */\n\n"
+                    "#include <iostream>\n\n"
                     "int main(void) {\n" +
                     codigo +
                     "\treturn 0;\n"
                     "}";
     }
-    
-    void yyerror(string message) {
-        cout << "\033[1;31mSyntax error: " << message << endl << "\033[0m";
+
+    void yyerror(string message, string error = "Syntax error") {
+        cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
         exit(1);
     }
 
@@ -113,12 +119,12 @@ namespace variaveis {
         return NULL_VAR;
     }
 
-    Variavel createVariableIfNotExists(string varName, string type, string value, bool isConst = false,  bool isGlobal = false) {
+    Variavel createVariableIfNotExists(string varName, string varType, string varValue, bool isConst = false,  bool isGlobal = false) {
         bool found = false;
         findVariableByName(varName, found);
         
         if (!found) {
-            Variavel var = {varName, type, value, isConst};
+            Variavel var = {varName, varType, varValue, isConst};
             variaveis.push_back(var);
             return var;
         }

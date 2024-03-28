@@ -11,8 +11,9 @@ using namespace variaveis;
 int yylex(void);
 %}
 
-%token TK_ID TK_NUMBER
-%token TK_IF TK_ELSE
+%token TK_ID TK_NUMBER TK_CHAR TK_STRING
+
+%token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
 
 %token TK_MAIN
 
@@ -20,15 +21,17 @@ int yylex(void);
 
 %token TK_TYPE TK_VOID
 
-%token TK_AND TK_OR TK_TRUE TK_FALSE
+%token TK_AND TK_OR TK_TRUE TK_FALSE TK_NOT
+
+%token TK_SIMILAR TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
 %start S
 
 %right '='
 %left TK_AND TK_OR
 %left '*''/'
-%left '+''-'
-%left '!'
+%left '+''-' TK_EQUALS TK_SIMILAR TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
+%left TK_NOT
 
 %%
 
@@ -37,237 +40,315 @@ int yylex(void);
  * The first rule is the start symbol
  */
 
-S   : TK_FUNCTION TK_MAIN FUNCTION_STRUCTURE COMMANDS { 
-        cout << gerarCodigo($4.translation) << endl;
-    }
-    | COMMANDS {
-        cout << gerarCodigo($1.translation) << endl;
-    }
-
-/**
- * Parameters
- */
-
- FUNCTION_STRUCTURE: FUNCTION_PARAMS ':' TK_TYPE {
-                        cout << "função com parametros e tipo" << endl;
-                    }
-                    | FUNCTION_PARAMS {
-                        cout << "função com parametros sem tipo" << endl;
-                    }
-
-FUNCTION_PARAMS: '(' PARAMS ')' { cout << "parametros de função" << endl; }
-
-PARAMS : TK_ID { cout << "parametro sem tipo" << endl; }
-       | TK_ID ':' TK_TYPE { cout << "parametro com tipo" << endl; }
-       | PARAMS ',' TK_ID ':' TK_TYPE { cout << "parametros" << endl; }
-       | { cout << "parametros vazio" << endl; }
+S                   : COMMANDS {
+                        cout << gerarCodigo($1.translation) << endl;
+                    };
 
 /**
  * Commands and blocks
  */
 
-COMMANDS    : COMMAND COMMANDS {
-                $$.translation = $1.translation + $2.translation;
-            }
-            | '{' COMMANDS '}' { 
-                $$.translation = $2.translation;
-            }
-            | { $$.translation = ""; }
+COMMANDS            : COMMAND COMMANDS {
+                        $$.translation = "\t" + $1.translation + $2.translation;
+                    }
+                    | '{' COMMANDS '}' { 
+                        $$.translation = "\t" + $2.translation;
+                    }
+                    | { $$.translation = ""; }
 
-COMMAND : COMMAND ';' {
-            $$ = $1;
-        }
-        | EXPRESSION {
-            $$ = $1;
-        }
-        | TK_CONST TK_ID ':' TK_TYPE '=' EXPRESSION {
-            if ($4.label != $6.type) {
-                yyerror("The type of the expression (" + $6.type + ") is not compatible with the type of the variable (" + $4.label + ")");
-                return -1;
-            }
-
-            string currentType = getTypeCodeById($4.label);
-
-            if (empty(currentType)) {
-                yyerror("The type " + $4.label + " is not defined");
-                return -1;
-            }
-
-            createVariableIfNotExists($2.label, $4.label, $6.label, true);
-
-            $$.label = $2.label;
-            $$.type = $4.label;
-            $$.translation = $4.translation + "\t" + $2.label + " = " + $6.label + ";\n";
-        }
-        | TK_LET TK_ID ':' TK_TYPE '=' EXPRESSION {
-            if (false) {
-                yyerror("Cannot found symbol \"" + $2.label + "\"");
-                return -1;
-            }
-
-            if ($4.label != $6.type) {
-                yyerror("The type of the expression (" + $6.type + ") is not compatible with the type of the variable (" + $4.label + ")");
-                return -1;
-            }
-
-            createVariableIfNotExists($2.label, $4.label, $6.label);
-            
-            $$.label = $2.label;
-            $$.type = $4.label;
-            $$.translation = $6.translation + "\t" + $2.label + " = " + $6.label + ";\n";
-        }
-        | TK_CONST TK_ID '=' EXPRESSION {
-            createVariableIfNotExists($2.label, $4.type, $4.label, true);
-
-            $$.label = $2.label;
-            $$.type = $4.type;
-            $$.translation = $4.translation + "\t" + $2.label + " = " + $4.label + ";\n";
-        }
-        | TK_LET TK_ID '=' EXPRESSION {
-            createVariableIfNotExists($2.label, $4.type, $4.label);
-
-            $$.label = $2.label;
-            $$.type = $4.type;
-            $$.translation = $4.translation + "\t" + $2.label + " = " + $4.label + ";\n";
-        }
+COMMAND             : COMMAND ';' {
+                        $$ = $1;
+                    }
+                    | FUNCTION {
+                        $$ = $1;
+                    }
+                    | EXPRESSION {
+                        $$ = $1;
+                    }
+                    | VARIABLE_DECLARATION {
+                        $$ = $1;
+                    }
 
 /**
+ * Functions
+ */
+
+ FUNCTION           : TK_FUNCTION TK_ID '(' PARAMETERS ')' RETURN_TYPE '{' COMMANDS '}' {
+                        cout << "Função" << endl;
+                        $$.translation = $6.label + " " + $2.label + "(" + $4.translation + ") {\n" + indent($8.translation) + "\t}\n";
+                    }
+                    | TK_ID '(' ARGUMENTS ')' {
+                        cout << "Chamada função" << endl;
+
+                        $$.translation = $1.label + "(" + $3.translation + ");\n";
+                    }
+
+ARGUMENTS           : TK_ID {
+                        cout << "Argumento" << endl;
+                    }
+                    | TK_ID ',' ARGUMENTS {
+                        cout << "Argumento" << endl;
+                    }
+                    | { cout << "Vazio" << endl; $$.translation = ""; }
+
+PARAMETERS          : TK_ID RETURN_TYPE {
+                        cout << "Parâmetro" << endl;
+                        $$.translation = $2.type + " " + $1.label ;
+                    }
+                    | TK_ID RETURN_TYPE ',' PARAMETERS {
+                        cout << "Parâmetro" << endl;
+                        $$.translation =  $2.type + " " + $1.label + ", " + $4.translation;
+                    }
+                    | { cout << "Vazio" << endl; $$.translation = ""; }
+
+RETURN_TYPE        : ':' TK_TYPE { $$.type = $2.label; }
+                    | ':' TK_VOID { $$.type = "void"; }
+                    | { cout << "Vazio" << endl; $$.type = "void"; }
+
+ /**
  * Expressions
  */
 
-EXPRESSION  : EXPRESSION '*' EXPRESSION {
-                if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("The operator * must be used with a number type");
-                    return -1;
-                }
+EXPRESSION          : ARITMETIC { $$ = $1; }
+                    | LOGICAL { $$ = $1; }
+                    | RELATIONAL { $$ = $1; }
+                    | ASSIGNMENT { $$ = $1; }
+                    | TYPES { $$ = $1; }
+                    | TK_ID {
+                        bool found = false;
+                        Variavel variavel = findVariableByName($1.label, found);
 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
-            }
-            | EXPRESSION '/' EXPRESSION { 
-                if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("The operator / must be used with a number type");
-                }
+                        if (!found) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
-            }
-            | EXPRESSION '+' EXPRESSION { 
-                if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("The operator + must be used with a number type");
-                    return -1;
-                }
+                        $$.label = gentempcode();
+                        $$.type = variavel.getVarType();
+                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                    };
 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
-            }
-            | EXPRESSION '-' EXPRESSION { 
-                if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                    yyerror("The operator - must be used with a number type");
-                    return -1;
-                }
+/**
+ * Variables
+ */
 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
-            }
-            | '!' EXPRESSION { 
-                if ($2.type != BOOLEAN_ID) {
-                    yyerror("The operator ! must be used with a boolean type");
-                    return -1;
-                }
+VARIABLE_DECLARATION: TK_LET TK_ID RETURN_TYPE '=' EXPRESSION {
+                        if ($3.type != "void" && $3.type != $5.type) {
+                            yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
+                            return -1;
+                        }
 
-                $$.label = gentempcode();
-                $$.type = BOOLEAN_ID;
-                $$.translation = $2.translation + "\t" + $$.label + " = !" + $2.label + ";\n";
-                cout << $$.translation << endl;
-            }
-            | EXPRESSION TK_AND EXPRESSION {
-                if ($1.type != BOOLEAN_ID || $3.type != BOOLEAN_ID) { // TEM QUE VERIFICAR COMPATIBILIDADE
-                    yyerror("Boolean and type mismatch");
-                    return -1;
-                }
+                        createVariableIfNotExists($2.label, $5.type, $5.label);
+                        
+                        $$.label = $2.label;
+                        $$.type = $4.label;
+                        $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
+                    }
+                    | TK_CONST TK_ID RETURN_TYPE '=' EXPRESSION {
+                        if ($3.type != "void" && $3.type != $5.type) {
+                            yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
+                            return -1;
+                        }
 
-                $$.label = gentempcode();
-                $$.type = BOOLEAN_ID;
-                $$.translation = $1.translation + $3.translation + "\t" + $$.label + " = " + $1.label + " && " + $3.label + ";\n";
-                cout << $$.translation << endl;
-            }
-            | '|' EXPRESSION '|' {
-                if ($2.type != NUMBER_ID) {
-                    yyerror("The operador absolute must be used with a number type");
-                    return -1;
-                }
+                        createVariableIfNotExists($2.label, $5.type, $5.label, true);
 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = $2.translation + "\t" + $$.label + " = " + $2.label + ";\n";
-                cout << $$.translation << endl;
-            }
-            | TK_ID '=' EXPRESSION { 
-                // verificar se TK_ID está na tabela de simbolos
-                // se estiver, pegar o tipo e verificar se é compatível
-                // se não estiver, mandar erro
+                        $$.label = $2.label;
+                        $$.type = $4.type;
+                        $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
+                    };
 
-                bool found = false;
-                Variavel variavel = findVariableByName($1.label, found);
+ASSIGNMENT          : TK_ID '=' EXPRESSION { 
+                        bool found = false;
+                        Variavel variavel = findVariableByName($1.label, found);
 
-                if (!found) {
-                    yyerror("Cannot found symbol \"" + $1.label + "\"");
-                    return -1;
-                }
+                        if (!found) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
 
-                if (variavel.getVarType() != $3.type) {
-                    yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel.getVarType() + ")");
-                    return -1;
-                }
+                        if (variavel.getVarType() != $3.type) {
+                            yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel.getVarType() + ")");
+                            return -1;
+                        }
 
-                if (variavel.isConstant()) {
-                    yyerror("Cannot assign a value to a constant variable");
-                    return -1;
-                }
+                        if (variavel.isConstant()) {
+                            yyerror("Cannot assign a value to a constant variable");
+                            return -1;
+                        }
 
-                cout << $1.label << " " << $3.label << " " << $3.type << endl;
+                        cout << $1.label << " " << $3.label << " " << $3.type << endl;
 
-                variavel.setVarValue($3.label);
+                        variavel.setVarValue($3.label);
 
-                $$.label = $1.label;
-                $$.type = $1.type;
-                $$.translation = $1.translation + $3.translation + "\t" + $1.label + " = " + $3.label + ";\n";
-            }
-            | TK_TRUE { 
-                $$.label = gentempcode();
-                $$.type = BOOLEAN_ID;
-                $$.translation = "\t" + $$.label + " = true;\n";
-                cout<< "booleano true " << $$.translation << endl;
-            }
-            | TK_FALSE { 
-                $$.label = gentempcode();
-                $$.type = BOOLEAN_ID;
-                $$.translation = "\t" + $$.label + " = false;\n";
-                cout << "booleano false " << $$.translation << endl;
-            }
-            | TK_NUMBER  { 
-                $$.label = gentempcode();
-                $$.type = NUMBER_ID;
-                $$.translation = "\t" + $$.label + " = " + $1.label + ";\n";
-            }
-            | TK_ID { 
-                bool found = false;
-                Variavel variavel = findVariableByName($1.label, found);
+                        $$.label = $1.label;
+                        $$.type = $1.type;
+                        $$.translation = $1.translation + "\t" + $3.translation + $1.label + " = " + $3.label + ";\n";
+                    };
 
-                if (!found) {
-                    yyerror("Cannot found symbol \"" + $1.label + "\"");
-                    return -1;
-                }
+/**
+ * Types
+ */
 
-                $$.label = variavel.getVarValue();
-                $$.type = variavel.getVarType();
-                $$.translation = "\t" + $$.label + " = " + $1.label + ";\n";
-             };
+ TYPES              : TK_TRUE { 
+                        $$.label = gentempcode();
+                        $$.type = BOOLEAN_ID;
+                        $$.translation = $$.label + " = true;\n";
+                    }
+                    | TK_FALSE { 
+                        $$.label = gentempcode();
+                        $$.type = BOOLEAN_ID;
+                        $$.translation = $$.label + " = false;\n";
+                    }
+                    | TK_NUMBER  { 
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                    }
+                    | TK_CHAR  { 
+                        $$.label = gentempcode();
+                        $$.type = CHAR_ID;
+                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                    }
+                    | TK_STRING  { 
+                        $$.label = gentempcode();
+                        $$.type = STRING_ID;
+                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                    }
+
+/**
+ * Arithmetic expressions
+ */
+
+ ARITMETIC          : EXPRESSION '*' EXPRESSION {
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator * must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
+                    }
+                    | EXPRESSION '/' EXPRESSION { 
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator / must be used with a number type");
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                    }
+                    | EXPRESSION '+' EXPRESSION {
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator + must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                    }
+                    | EXPRESSION '-' EXPRESSION { 
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator - must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                    } 
+                    | '|' EXPRESSION '|' {
+                        if ($2.type != NUMBER_ID) {
+                            yyerror("The operador absolute must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $2.translation + $$.label + " = " + $2.label + ";\n";
+                    }
+
+/**
+ * Logical expressions
+ */
+
+LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
+                        $$.type = BOOLEAN_ID;
+
+                        bool sameType = $1.type == $3.type;
+
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = true;\n";
+                    }
+                    |
+                    EXPRESSION TK_EQUALS EXPRESSION {
+                        $$.type = BOOLEAN_ID;
+
+                        bool sameType = $1.type == $3.type;
+
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + (sameType == 0 ? "false" : "true") + ";\n";
+                    }
+                    | TK_NOT EXPRESSION {
+                        if ($2.type != BOOLEAN_ID) {
+                            yyerror("The operator ! must be used with a boolean type");
+                            return -1;
+                        }
+
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $2.translation + $$.label + " = !" + $2.label + ";\n";
+                    }
+
+/**
+ * Relational expressions
+ */
+
+ RELATIONAL         : EXPRESSION TK_GREATER EXPRESSION {
+                        if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator > must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
+                    }
+                    |
+                    EXPRESSION TK_LESS EXPRESSION {
+                        if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator < must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
+                    }
+                    |
+                    EXPRESSION TK_GREATER_EQUALS EXPRESSION {
+                        if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator >= must be used with a number type");
+                            return -1;
+                        }
+
+
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
+                    }
+                    |
+                    EXPRESSION TK_LESS_EQUALS EXPRESSION {
+                        if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator <= must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
+                    }
 
 /** Control structures 
  *
@@ -282,7 +363,6 @@ int yyparse();
 int main(int argc, char* argv[])
 {
 	yyparse();
-
 	return 0;
 }
 

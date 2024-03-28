@@ -1,6 +1,1 @@
-const test: number[] =1+1
-const test = 1+1
-
-let test: number = 1 + 1
-let test: number = test
-let test = 1 + 1
+const test: number =1+1
