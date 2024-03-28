@@ -23,8 +23,6 @@ RESERVED_KEYS ("int"|"t"{NUMBER})
 "\n"            { /* ignorar break line */                      }
 {RESERVED_KEYS} { yylval.label = yytext; return TK_FORBIDDEN;   }
 
-"main"          { return TK_MAIN;                               }
-
 "if"            { return TK_IF;                                 }
 "else"          { return TK_ELSE;                               }
 "repeat"        { return TK_REPEAT;                             }
