@@ -3,6 +3,7 @@
 #include <vector>
 #include "str.h"
 
+using namespace std;
 using namespace str;
 
 #pragma once

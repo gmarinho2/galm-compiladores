@@ -2,13 +2,11 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 #pragma once
 namespace str {
-    vector<string> split(string str, string del) {
+    std::vector<std::string> split(std::string str, std::string del) {
         // Use find function to find 1st position of delimiter.
-        vector<string> v;
+        std::vector<std::string> v;
         int end = str.find(del); 
 
         while (end != -1) { // Loop until no delimiter is left in the string.
@@ -20,9 +18,9 @@ namespace str {
         return v;
     }
 
-    string indent(string code) {
-        vector<string> lines = split(code, "\n");
-        string identedCode = "";
+    std::string indent(std::string code) {
+        std::vector<std::string> lines = split(code, "\n");
+        std::string identedCode = "";
 
         for (int i = 0; i < lines.size(); i++) {
             identedCode += "\t" + lines[i] + "\n";
