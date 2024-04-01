@@ -1,0 +1,26 @@
+mkdir -p output
+lex -o output/lexico.yy.c src/lexico.l
+yacc -d src/sintatico.y -o output/parser.tab.c -Wcounterexamples
+g++ -o output/compiler.exe output/parser.tab.c -ll
+./output/compiler.exe < examples/current.galm
+Parâmetro
+Vazio
+Função
+Vazio
+Chamada função
+/* Compilador GALM */
+
+#include <iostream>
+
+int main(void) {
+	int b;
+	string n;
+	t1 = "ola";
+	n = t1;
+	number test(number a) {
+		t2 = 1;
+		b = t2;
+	}
+	test();
+	return 0;
+}
