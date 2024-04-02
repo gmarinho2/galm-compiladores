@@ -11,13 +11,13 @@ using namespace variaveis;
 int yylex(void);
 %}
 
-%token TK_ID TK_NUMBER TK_CHAR TK_STRING
+%token TK_ID TK_INTEGER TK_REAL TK_CHAR TK_STRING
 
 %token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
 
 %token TK_LET TK_CONST TK_FUNCTION TK_TYPE TK_VOID
 
-%token TK_AND TK_OR TK_TRUE TK_FALSE TK_NOT
+%token TK_AND TK_OR TK_BOOLEAN TK_NOT
 
 %token TK_SIMILAR TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
@@ -116,7 +116,7 @@ EXPRESSION          : ARITMETIC { $$ = $1; }
                     | TYPES { $$ = $1; }
                     | ID {
                         bool found = false;
-                        Variavel variavel = findVariableByName($1.label, found);
+                        Variavel var = findVariableByName($1.label, found);
 
                         if (!found) {
                             yyerror("Cannot found symbol \"" + $1.label + "\"");
@@ -124,8 +124,14 @@ EXPRESSION          : ARITMETIC { $$ = $1; }
                         }
 
                         $$.label = gentempcode();
-                        $$.type = variavel.getVarType();
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                        $$.type = var.getVarType();
+                        $$.details = var.getDetails();
+                        
+                        if ($$.type == NUMBER_ID) {
+                            $$.translation = $$.label + " = " + var.getRealVarLabel() + ";\n";
+                        } else {
+                            $$.translation = $$.label + " = " + $1.label + ";\n";
+                        }
                     }
 
 /**
@@ -138,11 +144,11 @@ VARIABLE_DECLARATION: TK_LET ID RETURN_TYPE '=' EXPRESSION {
                             return -1;
                         }
 
-                        createVariableIfNotExists($2.label, $5.type, $5.label);
+                        Variavel var = createVariableIfNotExists($2.label, $5.type, $5.label, $5.details == REAL_NUMBER_ID ? true : false);
                         
                         $$.label = $2.label;
-                        $$.type = $4.label;
-                        $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
+                        $$.type = $5.type;
+                        $$.translation = $5.translation + "\t" + var.getRealVarLabel() + " = " + $5.label + ";\n";
                     }
                     | TK_CONST ID RETURN_TYPE '=' EXPRESSION {
                         if ($3.type != "void" && $3.type != $5.type) {
@@ -150,14 +156,14 @@ VARIABLE_DECLARATION: TK_LET ID RETURN_TYPE '=' EXPRESSION {
                             return -1;
                         }
 
-                        createVariableIfNotExists($2.label, $5.type, $5.label, true);
-
+                        Variavel var = createVariableIfNotExists($2.label, $5.type, $5.label, $5.details == REAL_NUMBER_ID ? true : false, true);
+                        
                         $$.label = $2.label;
                         $$.type = $4.type;
-                        $$.translation = $5.translation + "\t" + $2.label + " = " + $5.label + ";\n";
+                        $$.translation = $5.translation + "\t" + var.getRealVarLabel() + " = " + $5.label + ";\n";
                     };
 
-ASSIGNMENT          : ID '=' EXPRESSION { 
+ASSIGNMENT          : ID '=' EXPRESSION {
                         bool found = false;
                         Variavel variavel = findVariableByName($1.label, found);
 
@@ -176,43 +182,48 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             return -1;
                         }
 
-                        cout << $1.label << " " << $3.label << " " << $3.type << endl;
-
                         variavel.setVarValue($3.label);
 
+                        if (variavel.isNumber()) {
+                            variavel.setIsReal($3.details == REAL_NUMBER_ID);
+                        }
+
                         $$.label = $1.label;
-                        $$.type = $1.type;
-                        $$.translation = $1.translation + "\t" + $3.translation + $1.label + " = " + $3.label + ";\n";
+                        $$.type = variavel.getVarType();
+
+                        $$.translation = $1.translation + $3.translation + "\t" + variavel.getRealVarLabel() + " = " + $3.label + ";\n";
                     };
 
 /**
  * Types
  */
 
- TYPES              : TK_TRUE { 
+ TYPES              : TK_BOOLEAN { 
                         $$.label = gentempcode();
                         $$.type = BOOLEAN_ID;
-                        $$.translation = $$.label + " = true;\n";
+                        $$.translation = "bool " + $$.label + " = " + $1.label + ";\n";
                     }
-                    | TK_FALSE { 
-                        $$.label = gentempcode();
-                        $$.type = BOOLEAN_ID;
-                        $$.translation = $$.label + " = false;\n";
-                    }
-                    | TK_NUMBER  { 
+                    | TK_REAL { 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                        $$.details = REAL_NUMBER_ID;
+                        $$.translation = getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + ";\n";
+                    }
+                    | TK_INTEGER  { 
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.details = INTEGER_NUMBER_ID;
+                        $$.translation = getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_CHAR  { 
                         $$.label = gentempcode();
                         $$.type = CHAR_ID;
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                        $$.translation = "char " + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_STRING  { 
                         $$.label = gentempcode();
                         $$.type = STRING_ID;
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
+                        $$.translation = "string " + $$.label + " = " + $1.label + ";\n";
                     }
 
 /**
@@ -221,22 +232,35 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
  ARITMETIC          : EXPRESSION '*' EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator * must be used with a number type");
+                            yyerror("The operator - must be used with a number type");
                             return -1;
                         }
 
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " * " + $3.label + ";\n";
-                    }
-                    | EXPRESSION '/' EXPRESSION { 
-                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator / must be used with a number type");
+                        if ($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID) {
+                            $$.details = REAL_NUMBER_ID;
+                        } else {
+                            $$.details = INTEGER_NUMBER_ID;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " / " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " * " + $3.label + ";\n");
+                    }
+                    | EXPRESSION '/' EXPRESSION { 
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator - must be used with a number type");
+                            return -1;
+                        }
+
+                        if ($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID) {
+                            $$.details = REAL_NUMBER_ID;
+                        } else {
+                            $$.details = INTEGER_NUMBER_ID;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " / " + $3.label + ";\n");
                     }
                     | EXPRESSION '+' EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
@@ -244,9 +268,15 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             return -1;
                         }
 
+                        if ($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID) {
+                            $$.details = REAL_NUMBER_ID;
+                        } else {
+                            $$.details = INTEGER_NUMBER_ID;
+                        }
+
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " + " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " + " + $3.label + ";\n");
                     }
                     | EXPRESSION '-' EXPRESSION { 
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
@@ -254,9 +284,15 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             return -1;
                         }
 
+                        if ($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID) {
+                            $$.details = REAL_NUMBER_ID;
+                        } else {
+                            $$.details = INTEGER_NUMBER_ID;
+                        }
+
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " - " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " - " + $3.label + ";\n");
                     } 
                     | '|' EXPRESSION '|' {
                         if ($2.type != NUMBER_ID) {
@@ -264,9 +300,9 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             return -1;
                         }
 
-                        $$.label = gentempcode();
+                        $$.label = gentempcode(); //TODO
                         $$.type = NUMBER_ID;
-                        $$.translation = $2.translation + $$.label + " = " + $2.label + ";\n";
+                        $$.translation = $2.translation + $$.label + " = abs(" + $2.label + ");\n";
                     }
 
 /**

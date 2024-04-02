@@ -15,21 +15,13 @@ namespace variaveis {
     const string STRING_ID = "string";
     const string CHAR_ID = "char";
 
-    string getTypeCodeById(string id) {
-        if (id == NUMBER_ID) {
-            return "int";
-        } else if (id == BOOLEAN_ID) {
-            return "bool";
-        } else if (id == STRING_ID) {
-            return "string";
-        }
-        
-        return "";
-    }
+    const string REAL_NUMBER_ID = "real";
+    const string INTEGER_NUMBER_ID = "integer";
 
     typedef struct {
         string label;
         string type;
+        string details;
         string translation;
     } Atributo;
     
@@ -39,12 +31,14 @@ namespace variaveis {
             string varType;
             string varValue;
             bool constant;
+            bool real;
         public:
-            Variavel(string varName, string varType, string varValue, bool constant) {
+            Variavel(string varName, string varType, string varValue, bool constant, bool real = false) {
                 this->varName = varName;
                 this->varType = varType;
                 this->varValue = varValue;
                 this->constant = constant;
+                this->real = real;
             }
 
             string getVarName() {
@@ -59,12 +53,26 @@ namespace variaveis {
                 this->varValue = value;
             }
 
+            void setIsReal(bool real) {
+                this->real = real;
+            }
+
+            bool isReal() {
+                return real;
+            }
+
             string getVarType() {
                 return varType;
             }
 
-            string getRealVarType() {
-                return getTypeCodeById(varType);
+            string getRealVarLabel() {
+                if (varType == NUMBER_ID) 
+                    return varName + "." +  (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID);
+                return varName;
+            }
+
+            string getDetails() {
+                return varType == NUMBER_ID ? (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID) : "";
             }
 
             bool isConstant() {
@@ -72,12 +80,20 @@ namespace variaveis {
             }
 
             string getTranslation() {
-                return getRealVarType() + " " + varName;
+                return getVarType() + " " + varName;
+            }
+
+            bool isNumber() {
+                return varType == NUMBER_ID;
             }
 
     };
 
-    const Variavel NULL_VAR = {"", "", "", false};
+    string getTypeByDetails(string details) {
+        return details == "REAL_NUMBER_ID" ? "double" : "int";
+    }
+
+    const Variavel NULL_VAR = Variavel("", "", "", false);
 
     vector<Variavel> variaveis;
 
@@ -88,6 +104,8 @@ namespace variaveis {
 
     string gerarCodigo(string codigo) {
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
+
+        compilador += "typedef union {\n\tdouble real;\n\tlong long int integer;\n} number;\n\n";
 
         for (int i = 0; i < variaveis.size(); i++) {
             compilador += variaveis[i].getTranslation() + ";\n";
@@ -120,12 +138,12 @@ namespace variaveis {
         return NULL_VAR;
     }
 
-    Variavel createVariableIfNotExists(string varName, string varType, string varValue, bool isConst = false,  bool isGlobal = false) {
+    Variavel createVariableIfNotExists(string varName, string varType, string varValue, bool isReal = false, bool isConst = false,  bool isGlobal = false) {
         bool found = false;
         findVariableByName(varName, found);
         
         if (!found) {
-            Variavel var = {varName, varType, varValue, isConst};
+            Variavel var = Variavel(varName, varType, varValue, isConst, isReal);
             variaveis.push_back(var);
             return var;
         }

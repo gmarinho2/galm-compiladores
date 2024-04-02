@@ -1,7 +1,3 @@
-let n: string = "ola"
-
-fn test(a: number) {
-    let t0: number = 1;
-}
-
-test()
+let x = 1;
+let y = 1.0;
+let z = x / y;

@@ -8,6 +8,8 @@ LETTER [A-Za-z]
 UNDERSCORE _
 
 NUMBER ({DIGIT})+
+REAL [-+]?(((({DIGIT}+)|({DIGIT}*\.{DIGIT}+))([eE][-+]?{DIGIT}+)?))
+INTEGER [-+]?{NUMBER}
 CHAR \'({LETTER}|{DIGIT})\'
 STRING \"({LETTER}|{DIGIT})*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
@@ -33,8 +35,8 @@ RESERVED_KEYS ("int"|"t"{NUMBER})
 "let"           { return TK_LET;                                }
 "const"         { return TK_CONST;                              }
 
-"true"          { yylval.label = yytext; return TK_TRUE;        }
-"false"         { yylval.label = yytext; return TK_FALSE;       }
+"true"          { yylval.label = yytext; return TK_BOOLEAN;     }
+"false"         { yylval.label = yytext; return TK_BOOLEAN;     }
 
 "and"           { return TK_AND;                                }
 "or"            { return TK_OR;                                 }
@@ -58,7 +60,8 @@ RESERVED_KEYS ("int"|"t"{NUMBER})
 
 {STRING}		{ yylval.label = yytext; return TK_STRING;      }
 {CHAR}		    { yylval.label = yytext; return TK_CHAR;        }
-{NUMBER}	    { yylval.label = yytext; return TK_NUMBER;      }
+{INTEGER}	    { yylval.label = yytext; return TK_INTEGER;     }
+{REAL}	        { yylval.label = yytext; return TK_REAL;        }
 {ID}		    { yylval.label = yytext; return TK_ID;          }
 
 .               { *yytext;                                      }
