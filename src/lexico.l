@@ -14,7 +14,7 @@ CHAR \'({LETTER}|{DIGIT})\'
 STRING \"({LETTER}|{DIGIT})*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 
-TYPES "number"|"boolean"|"char"|"string"
+TYPES "number"|"bool"|"char"|"string"
 OTHER_TYPES "void"|"null"|"undefined"
 
 RESERVED_KEYS ("int"|"t"{NUMBER})
@@ -43,8 +43,7 @@ RESERVED_KEYS ("int"|"t"{NUMBER})
 "!"|"not"       { return TK_NOT;                                }
 
 
-"=="            { return TK_SIMILAR;                            }
-"==="           { return TK_EQUALS;                             }
+"=="            { return TK_EQUALS;                            }
 ">="            { return TK_GREATER_EQUALS;                     }
 "<="            { return TK_LESS_EQUALS;                        }
 "!="            { return TK_DIFFERENT;                          }

@@ -19,7 +19,7 @@ int yylex(void);
 
 %token TK_AND TK_OR TK_BOOLEAN TK_NOT
 
-%token TK_SIMILAR TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
+%token TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
 %token TK_FORBIDDEN
 
@@ -28,7 +28,7 @@ int yylex(void);
 %right '='
 %left TK_AND TK_OR
 %left '*''/'
-%left '+''-' TK_EQUALS TK_SIMILAR TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
+%left '+''-' TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 %left TK_NOT
 
 %%
@@ -207,13 +207,13 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
                         $$.details = REAL_NUMBER_ID;
-                        $$.translation = getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_INTEGER  { 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
                         $$.details = INTEGER_NUMBER_ID;
-                        $$.translation = getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_CHAR  { 
                         $$.label = gentempcode();
@@ -232,7 +232,7 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
  ARITMETIC          : EXPRESSION '*' EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator - must be used with a number type");
+                            yyerror("The operator * must be used with a number type");
                             return -1;
                         }
 
@@ -244,11 +244,11 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " * " + $3.label + ";\n");
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " * " + $3.label + ";\n");
                     }
                     | EXPRESSION '/' EXPRESSION { 
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator - must be used with a number type");
+                            yyerror("The operator / must be used with a number type");
                             return -1;
                         }
 
@@ -260,7 +260,7 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " / " + $3.label + ";\n");
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " / " + $3.label + ";\n");
                     }
                     | EXPRESSION '+' EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
@@ -276,7 +276,7 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " + " + $3.label + ";\n");
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " + " + $3.label + ";\n");
                     }
                     | EXPRESSION '-' EXPRESSION { 
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
@@ -292,7 +292,7 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        $$.translation = $1.translation + indent($3.translation + getTypeByDetails($$.details) + " " + $$.label + " = " + $1.label + " - " + $3.label + ";\n");
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " - " + $3.label + ";\n");
                     } 
                     | '|' EXPRESSION '|' {
                         if ($2.type != NUMBER_ID) {
@@ -309,22 +309,24 @@ ASSIGNMENT          : ID '=' EXPRESSION {
  * Logical expressions
  */
 
-LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
+LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.type = BOOLEAN_ID;
-
-                        bool sameType = $1.type == $3.type;
-
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = true;\n";
+
+                        string firstExpression = getAsBoolean($1);
+                        string secondExpression = getAsBoolean($3);
+
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + firstExpression + " && " + secondExpression + ";\n");
                     }
                     |
-                    EXPRESSION TK_EQUALS EXPRESSION {
+                    EXPRESSION TK_OR EXPRESSION {
                         $$.type = BOOLEAN_ID;
-
-                        bool sameType = $1.type == $3.type;
-
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + (sameType == 0 ? "false" : "true") + ";\n";
+
+                        string firstExpression = getAsBoolean($1);
+                        string secondExpression = getAsBoolean($3);
+
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + firstExpression + " || " + secondExpression + ";\n");
                     }
                     | TK_NOT EXPRESSION {
                         if ($2.type != BOOLEAN_ID) {
@@ -349,7 +351,7 @@ LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " > " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " > " + $3.label + ";\n");
                     }
                     |
                     EXPRESSION TK_LESS EXPRESSION {
@@ -360,7 +362,7 @@ LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " < " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " < " + $3.label + ";\n");
                     }
                     |
                     EXPRESSION TK_GREATER_EQUALS EXPRESSION {
@@ -372,7 +374,7 @@ LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " >= " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " >= " + $3.label + ";\n");
                     }
                     |
                     EXPRESSION TK_LESS_EQUALS EXPRESSION {
@@ -383,7 +385,13 @@ LOGICAL             : EXPRESSION TK_SIMILAR EXPRESSION {
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " <= " + $3.label + ";\n";
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " <= " + $3.label + ";\n");
+                    }
+                    |
+                    EXPRESSION TK_EQUALS EXPRESSION {
+                        $$.type = BOOLEAN_ID;
+                        $$.label = gentempcode();
+                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + $1.label + " == " + $3.label + ";\n");
                     }
 
 /** Control structures 

@@ -8,10 +8,10 @@ using namespace str;
 
 #pragma once
 namespace variaveis {
-    unsigned long tempCodeCounter = 0;
+    unsigned long long int tempCodeCounter = 0;
 
     const string NUMBER_ID = "number";
-    const string BOOLEAN_ID = "boolean";
+    const string BOOLEAN_ID = "bool";
     const string STRING_ID = "string";
     const string CHAR_ID = "char";
 
@@ -89,8 +89,12 @@ namespace variaveis {
 
     };
 
-    string getTypeByDetails(string details) {
-        return details == "REAL_NUMBER_ID" ? "double" : "int";
+    string getType(Atributo atributo) {
+        if (atributo.type == NUMBER_ID) {
+            return atributo.details == REAL_NUMBER_ID ? "double" : "long long int";
+        }
+
+        return atributo.type;
     }
 
     const Variavel NULL_VAR = Variavel("", "", "", false);
@@ -150,6 +154,26 @@ namespace variaveis {
 
         yyerror("The symbol \"" + varName + "\" is already declared");
         return NULL_VAR;
+    }
+
+    string getAsBoolean(Atributo atributo) {
+        if (atributo.type == BOOLEAN_ID)
+            return atributo.label;
+
+        if (atributo.type == NUMBER_ID) {
+            return atributo.label + " != 0";
+        }
+
+        if (atributo.type == STRING_ID) {
+            return atributo.label + ".length() > 0";
+        }
+
+        if (atributo.type == CHAR_ID) {
+            return atributo.label + " != '\\0'";
+        }
+        
+        yyerror("Cannot convert " + atributo.type + " of symbol \"" + atributo.label + "\" to boolean");
+        return atributo.label;
     }
 
 };
