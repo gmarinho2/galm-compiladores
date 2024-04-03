@@ -1,4 +1,0 @@
-fn main(): number {
-    test = 1 + 1
-}
-

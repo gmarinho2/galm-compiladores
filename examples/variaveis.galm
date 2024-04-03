@@ -1,2 +1,2 @@
-const test: boolean = true and false
+const test: bool = true and false
 const test2: number = 1

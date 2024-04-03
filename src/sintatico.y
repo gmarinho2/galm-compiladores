@@ -11,6 +11,9 @@ using namespace variaveis;
 int yylex(void);
 %}
 
+%define parse.error verbose
+%define parse.lac full
+
 %token TK_ID TK_INTEGER TK_REAL TK_CHAR TK_STRING
 
 %token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
@@ -127,11 +130,7 @@ EXPRESSION          : ARITMETIC { $$ = $1; }
                         $$.type = var.getVarType();
                         $$.details = var.getDetails();
                         
-                        if ($$.type == NUMBER_ID) {
-                            $$.translation = $$.label + " = " + var.getRealVarLabel() + ";\n";
-                        } else {
-                            $$.translation = $$.label + " = " + $1.label + ";\n";
-                        }
+                        $$.translation = getType($$) + " " + $$.label + " = " + var.getRealVarLabel() + ";\n";
                     }
 
 /**
