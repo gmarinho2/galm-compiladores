@@ -3,7 +3,7 @@ all:
 	lex -o output/lexico.yy.c src/lexico.l
 	yacc -d src/sintatico.y -o output/parser.tab.c -Wcounterexamples
 	g++ -o output/compiler.exe output/parser.tab.c -ll
-	./output/compiler.exe < examples/bool.galm
+	./output/compiler.exe < examples/current.galm
 
 compile:
 	mkdir -p output

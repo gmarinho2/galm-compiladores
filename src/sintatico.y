@@ -11,10 +11,7 @@ using namespace variaveis;
 int yylex(void);
 %}
 
-%define parse.error verbose
-%define parse.lac full
-
-%token TK_ID TK_INTEGER TK_REAL TK_CHAR TK_STRING
+%token TK_ID TK_INTEGER TK_REAL TK_CHAR TK_STRING TK_AS
 
 %token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
 
@@ -29,6 +26,7 @@ int yylex(void);
 %start S
 
 %right '='
+%right TK_AS
 %left TK_AND TK_OR
 %left '*''/'
 %left '+''-' TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
@@ -49,60 +47,23 @@ S                   : COMMANDS {
  * Commands and blocks
  */
 
-COMMANDS            : COMMAND COMMANDS {
-                        $$.translation = "\t" + $1.translation + $2.translation;
-                    }
-                    | '{' COMMANDS '}' { 
-                        $$.translation = "\t" + $2.translation;
-                    }
+COMMANDS            : COMMAND COMMANDS { $$.translation = "\t" + $1.translation + $2.translation; }
+                    | '{' COMMANDS '}' {  $$.translation = "\t" + $2.translation; }
                     | { $$.translation = ""; }
 
-COMMAND             : COMMAND ';' {
-                        $$ = $1;
-                    }
-                    | FUNCTION {
-                        $$ = $1;
-                    }
-                    | EXPRESSION {
-                        $$ = $1;
-                    }
-                    | VARIABLE_DECLARATION {
-                        $$ = $1;
-                    }
+COMMAND             : COMMAND ';' { $$ = $1; }
+                    | EXPRESSION { $$ = $1; }
+                    | VARIABLE_DECLARATION { $$ = $1; }
 
 ID                  : TK_FORBIDDEN {
                         yyerror("You are trying to use a reserved key \"" + $1.label + "\".");
                     }
-                    | TK_ID {
-                        $$ = $1;
-                    }
+                    | TK_ID { $$ = $1; }
 
 /**
  * Functions
  */
 
- FUNCTION           : TK_FUNCTION ID '(' PARAMETERS ')' RETURN_TYPE '{' COMMANDS '}' { // Declaração da função
-                        $$.translation = $6.label + " " + $2.label + "(" + $4.translation + ") {\n" + indent($8.translation) + "\t}\n";
-                    }
-                    | ID '(' ARGUMENTS ')' { // Chamada da função
-                        $$.translation = $1.label + "(" + $3.translation + ");\n";
-                    }
-
-ARGUMENTS           : ID { // (arg1)
-                        cout << "Argumento" << endl;
-                    }
-                    | ID ',' ARGUMENTS { // (arg1, arg2)
-                        cout << "Argumento" << endl;
-                    }
-                    | { $$.translation = ""; }
-
-PARAMETERS          : ID RETURN_TYPE {
-                        $$.translation = $2.type + " " + $1.label ;
-                    }
-                    | ID RETURN_TYPE ',' PARAMETERS {
-                        $$.translation =  $2.type + " " + $1.label + ", " + $4.translation;
-                    }
-                    | { $$.translation = ""; }
 
 RETURN_TYPE         : ':' TK_TYPE { $$.type = $2.label; }
                     | ':' TK_VOID { $$.type = "void"; }
@@ -112,11 +73,13 @@ RETURN_TYPE         : ':' TK_TYPE { $$.type = $2.label; }
  * Expressions
  */
 
-EXPRESSION          : ARITMETIC { $$ = $1; }
+EXPRESSION          : CAST { $$ = $1; }
+                    | ARITMETIC { $$ = $1; }
                     | LOGICAL { $$ = $1; }
                     | RELATIONAL { $$ = $1; }
                     | ASSIGNMENT { $$ = $1; }
                     | TYPES { $$ = $1; }
+                    | '(' EXPRESSION ')' { $$ = $2; }
                     | ID {
                         bool found = false;
                         Variavel var = findVariableByName($1.label, found);
@@ -226,6 +189,21 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                     }
 
 /**
+ * Explicit type casting
+ */
+
+CAST                : TK_AS EXPRESSION {
+                        $1.label = $1.label.substr(1, $1.label.find(")") - 1);
+
+                        Atributo converted = convertType($2, $1.label);
+
+                        $$.label = gentempcode();
+                        $$.type = converted.type;
+                        $$.details = converted.details;
+                        $$.translation = $2.translation + indent(getType($$) + " " + $$.label + " = " + converted.label + ";\n");
+                    }
+
+/**
  * Arithmetic expressions
  */
 
@@ -327,15 +305,13 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
                         $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + firstExpression + " || " + secondExpression + ";\n");
                     }
-                    | TK_NOT EXPRESSION {
-                        if ($2.type != BOOLEAN_ID) {
-                            yyerror("The operator ! must be used with a boolean type");
-                            return -1;
-                        }
+                    |
+                    TK_NOT EXPRESSION {
+                        string expression = getAsBoolean($2);
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $2.translation + $$.label + " = !" + $2.label + ";\n";
+                        $$.translation = $2.translation + $$.label + " = !(" + expression + ");\n";
                     }
 
 /**

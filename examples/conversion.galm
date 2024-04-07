@@ -1,0 +1,7 @@
+
+let nton: number = (number) 1
+let bton: number = (number) true
+let cton: number = (number) 'a'
+
+let realNumberToChar: char = (char) 97.0
+let integerNumberToChar: char = (char) 97

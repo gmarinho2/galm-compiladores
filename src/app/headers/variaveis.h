@@ -156,6 +156,49 @@ namespace variaveis {
         return NULL_VAR;
     }
 
+    /**
+     * Função que converte um tipo de dado para outro
+     * 
+     * Retorna uma instância de Atributo, onde o label é como realmente será feito a conversão
+     * e o type é o tipo de dado que será convertido
+    */
+
+    Atributo convertType(Atributo from, string toType) {
+        if (from.type == toType)
+            return {from.label, from.type, from.details};
+
+        if (from.type == CHAR_ID) {
+            if (toType == NUMBER_ID) {
+                return {"(int) " + from.label, toType, INTEGER_NUMBER_ID};
+            } else if (toType == BOOLEAN_ID) {
+                return {"((int) " + from.label + ") != 0", toType, ""};
+            }
+        }
+
+        if (from.type == BOOLEAN_ID) {
+            if (toType == NUMBER_ID) {
+                return {from.label + " ? 1 : 0", toType, INTEGER_NUMBER_ID};
+            } else if (toType == CHAR_ID) {
+                return {"(char) (" + from.label + " ? 1 : 0)", toType, ""};
+            }
+        }
+
+        if (from.type == NUMBER_ID) {
+            if (toType == BOOLEAN_ID) {
+                return {from.label + " != 0", toType, ""};
+            } else if (toType == CHAR_ID) {
+                if (from.details == INTEGER_NUMBER_ID) {
+                    return {"(char) " + from.label, toType, ""};
+                } else {
+                    return {"(char) ((int) " + from.label + ")", toType, ""};
+                }
+            }
+        }
+        
+        yyerror("Not supported explicity conversion from " + from.type + " to " + toType);
+        return from;
+    }
+
     string getAsBoolean(Atributo atributo) {
         if (atributo.type == BOOLEAN_ID)
             return atributo.label;
