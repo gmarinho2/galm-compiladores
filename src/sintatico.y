@@ -195,12 +195,10 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 CAST                : TK_AS EXPRESSION {
                         $1.label = $1.label.substr(1, $1.label.find(")") - 1);
 
-                        Atributo converted = convertType($2, $1.label);
-
-                        $$.label = gentempcode();
-                        $$.type = converted.type;
-                        $$.details = converted.details;
-                        $$.translation = $2.translation + indent(getType($$) + " " + $$.label + " = " + converted.label + ";\n");
+                        Atributo converted = convertType($$, $2, $1.label);
+                        
+                        $$ = converted;
+                        $$.translation = $2.translation + converted.translation;
                     }
 
 /**

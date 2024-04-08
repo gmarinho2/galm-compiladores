@@ -163,40 +163,64 @@ namespace variaveis {
      * e o type é o tipo de dado que será convertido
     */
 
-    Atributo convertType(Atributo from, string toType) {
-        if (from.type == toType)
-            return {from.label, from.type, from.details};
+    Atributo convertType(Atributo cast, Atributo &expression, string toType) {
+        if (expression.type == toType)
+            return {expression.label, expression.type, expression.details};
 
-        if (from.type == CHAR_ID) {
+        if (expression.type == CHAR_ID) {
             if (toType == NUMBER_ID) {
-                return {"(int) " + from.label, toType, INTEGER_NUMBER_ID};
+                cast.label = gentempcode();
+                cast.type = NUMBER_ID;
+                cast.details = INTEGER_NUMBER_ID;
+                cast.translation = indent(getType(cast) + " " + cast.label + " = (" + getType(cast) + ") " + expression.label + ";\n");
+                return cast;
             } else if (toType == BOOLEAN_ID) {
-                return {"((int) " + from.label + ") != 0", toType, ""};
+                Atributo newCast = {};
+                Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
+
+                cast.label = gentempcode();
+                cast.type = BOOLEAN_ID;
+                cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = " + intConversion.label + " != 0;\n");
+                return cast;
             }
         }
 
-        if (from.type == BOOLEAN_ID) {
+        if (expression.type == BOOLEAN_ID) {
             if (toType == NUMBER_ID) {
-                return {from.label + " ? 1 : 0", toType, INTEGER_NUMBER_ID};
-            } else if (toType == CHAR_ID) {
-                return {"(char) (" + from.label + " ? 1 : 0)", toType, ""};
+                cast.label = gentempcode();
+                cast.type = NUMBER_ID;
+                cast.details = INTEGER_NUMBER_ID;
+                cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + ";\n");
+                return cast;
             }
         }
 
-        if (from.type == NUMBER_ID) {
+        if (expression.type == NUMBER_ID) {
             if (toType == BOOLEAN_ID) {
-                return {from.label + " != 0", toType, ""};
+                cast.label = gentempcode();
+                cast.type = BOOLEAN_ID;
+                cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + " != 0;\n");
+                return cast;
             } else if (toType == CHAR_ID) {
-                if (from.details == INTEGER_NUMBER_ID) {
-                    return {"(char) " + from.label, toType, ""};
+                if (expression.details == INTEGER_NUMBER_ID) {
+                    cast.label = gentempcode();
+                    cast.type = CHAR_ID;
+                    cast.translation = indent(getType(cast) + " " + cast.label + " = (char) " + expression.label + ";\n");
+                    return cast;
                 } else {
-                    return {"(char) ((int) " + from.label + ")", toType, ""};
+                    Atributo newCast = {};
+                    Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
+
+                    cast.label = gentempcode();
+                    cast.type = CHAR_ID;
+                    cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = (char) " + intConversion.label + ";\n");
+                    return cast;
                 }
             }
         }
         
-        yyerror("Not supported explicity conversion from " + from.type + " to " + toType);
-        return from;
+        yyerror("Not supported explicity conversion expression " + expression.type + " to " + toType);
+        return expression;
     }
 
     string getAsBoolean(Atributo atributo) {
