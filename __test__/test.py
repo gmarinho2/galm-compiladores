@@ -18,6 +18,12 @@ test_files = list_files("./examples")
 test_len = len(test_files)
 success = 0
 
+RED_COLOR = "\033[1;31m"
+RED_COLOR_UNDERLINED = "\033[4;31m"
+GREEN_COLOR = "\033[1;32m"
+GREEN_COLOR_UNDERLINED = "\033[4;32m"
+DEFAULT_COLOR = "\033[0m"
+
 test_path = "__test__/tests"
 
 if not os.path.exists(test_path):
@@ -26,15 +32,14 @@ else:
     shutil.rmtree(test_path)
     os.makedirs(test_path)
 
-time.sleep(0.5)
+time.sleep(0.1)
 
 if (os.system(f"make compile >/dev/null 2> {test_path}/compile.err") != 0):
     print("\nThe project could not be compiled")
     exit(0)
 
-time.sleep(0.5)
+time.sleep(0.1)
 print("The project has been compiled successfully\nStarting the tests:\n")
-time.sleep(0.7)
 
 for file in test_files:
 
@@ -43,7 +48,7 @@ for file in test_files:
 
     if (result != 0):
         os.rename(f"{test_path}/{file}.cpp", f"{test_path}/{file}.err")
-        print(f"Error while we are creating intermediate code for {file}\n")
+        print(f"{RED_COLOR_UNDERLINED}Error while we are creating intermediate code for {file}{DEFAULT_COLOR}\n")
         continue
 
     print(f"Compiling {file} using g++...")
@@ -51,21 +56,28 @@ for file in test_files:
     result = os.system(f"g++ {test_path}/{file}.cpp -o {test_path}/{file}.exe > {test_path}/{file}.cpp.err")
 
     if (result != 0):
-        print(f"Error while compiling {file}\n")
+        print(f"{RED_COLOR_UNDERLINED}Error while compiling {file}{DEFAULT_COLOR}\n")
         continue
 
     print(f"Testing {file}...")
 
+    result = os.system(f"./{test_path}/{file}.exe") 
+    # delete the executable file
+    os.remove(f"{test_path}/{file}.exe")
+
+    if (result != 0):
+        print(f"{RED_COLOR_UNDERLINED}Error while compiling {file}{DEFAULT_COLOR}\n")
+        continue
+
     if result == 0:
         success += 1
-        print(f"{file} has been successfully tested\n")
+        print(f"{GREEN_COLOR}{file} has been successfully tested{DEFAULT_COLOR}\n")
     else:
-        print(f"{file} has failed\n")
+        print(f"{RED_COLOR}{file} has failed{DEFAULT_COLOR}\n")
     
-    time.sleep(0.1)
-
 if (success == test_len):
-    print("All tests have been successfully completed, congratulations!")
+    print(f"{GREEN_COLOR_UNDERLINED}All tests have been successfully completed, congratulations!")
 else:
     print(f"{success}/{test_len} tests passed")
-    print(f"Success rate: {((success/test_len) * 100):.2f}%")
+    COLOR = GREEN_COLOR if success / test_len > 0.75 else RED_COLOR
+    print(f"{COLOR}Success rate: {((success/test_len) * 100):.2f}%")

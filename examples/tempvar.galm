@@ -1,0 +1,5 @@
+let t1 = 1
+let t2 = true
+let t3 = false
+
+let t4, t5: number, t7: number = 1

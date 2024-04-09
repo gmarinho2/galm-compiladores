@@ -1,1 +1,3 @@
 let test: bool = (bool) 'a'
+let t4, t5: number, t7: number = 1
+t5 = t7

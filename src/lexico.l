@@ -15,9 +15,9 @@ STRING \"({LETTER}|{DIGIT})*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 TYPES "number"|"bool"|"char"|"string"
-OTHER_TYPES "void"|"null"|"undefined"
+OTHER_TYPES "void"|"null"
 
-RESERVED_KEYS ("int"|"t"{NUMBER})
+RESERVED_KEYS "int"
 
 %%
 
@@ -35,8 +35,8 @@ RESERVED_KEYS ("int"|"t"{NUMBER})
 "let"             { return TK_LET;                                }
 "const"           { return TK_CONST;                              }
   
-"true"            { yylval.label = yytext; return TK_BOOLEAN;     }
-"false"           { yylval.label = yytext; return TK_BOOLEAN;     }
+"true"            { yylval.label = "1"; return TK_BOOLEAN;     }
+"false"           { yylval.label = "0"; return TK_BOOLEAN;     }
   
 "and"             { return TK_AND;                                }
 "or"              { return TK_OR;                                 }

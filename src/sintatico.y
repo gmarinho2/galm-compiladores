@@ -52,8 +52,8 @@ COMMANDS            : COMMAND COMMANDS { $$.translation = "\t" + $1.translation 
                     | { $$.translation = ""; }
 
 COMMAND             : COMMAND ';' { $$ = $1; }
-                    | EXPRESSION { $$ = $1; }
                     | VARIABLE_DECLARATION { $$ = $1; }
+                    | EXPRESSION { $$ = $1; }
 
 ID                  : TK_FORBIDDEN {
                         yyerror("You are trying to use a reserved key \"" + $1.label + "\".");
@@ -82,78 +82,119 @@ EXPRESSION          : CAST { $$ = $1; }
                     | '(' EXPRESSION ')' { $$ = $2; }
                     | ID {
                         bool found = false;
-                        Variavel var = findVariableByName($1.label, found);
+                        Variavel* var = findVariableByName($1.label, found);
 
                         if (!found) {
                             yyerror("Cannot found symbol \"" + $1.label + "\"");
                             return -1;
                         }
 
+                        if (isVoid(var->getVarType())) {
+                            yyerror("The variable " + $1.label + " was not initialized yet");
+                            return -1;
+                        }
+
                         $$.label = gentempcode();
-                        $$.type = var.getVarType();
-                        $$.details = var.getDetails();
+                        $$.type = var->getVarType();
+                        $$.details = var->getDetails();
                         
-                        $$.translation = getType($$) + " " + $$.label + " = " + var.getRealVarLabel() + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + " = " + var->getRealVarLabel() + ";\n";
                     }
 
 /**
  * Variables
  */
 
-VARIABLE_DECLARATION: TK_LET ID RETURN_TYPE '=' EXPRESSION {
-                        if ($3.type != "void" && $3.type != $5.type) {
-                            yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
-                            return -1;
-                        }
+VARIABLE_DECLARATION: TK_LET LET_VARS { $$ = $2; }
+                    | TK_CONST CONST_VARS { $$ = $2; }
 
-                        Variavel var = createVariableIfNotExists($2.label, $5.type, $5.label, $5.details == REAL_NUMBER_ID ? true : false);
-                        
-                        $$.label = $2.label;
-                        $$.type = $5.type;
-                        $$.translation = $5.translation + "\t" + var.getRealVarLabel() + " = " + $5.label + ";\n";
+LET_VARS            : LET_VARS ',' LET_VAR_DECLARTION { $$.translation = $1.translation + $3.translation; }
+                    | LET_VAR_DECLARTION { $$.translation = $1.translation; }
+
+LET_VAR_DECLARTION  : ID RETURN_TYPE {
+                        string tempCode = gentempcode();
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
+
+                        $$.label = tempCode;
+                        $$.type = $2.type;
+                        $$.translation = "";
                     }
-                    | TK_CONST ID RETURN_TYPE '=' EXPRESSION {
-                        if ($3.type != "void" && $3.type != $5.type) {
-                            yyerror("The type of the expression (" + $5.type + ") is not compatible with the type of the variable (" + $3.type + ")", "Type check error");
+                    |
+                    ID RETURN_TYPE '=' EXPRESSION {
+                        if ($2.type != "void" && $2.type != $4.type) {
+                            yyerror("The type of the expression (" + $4.type + ") is not compatible with the type of the variable (" + $2.type + ")", "Type check error");
                             return -1;
                         }
 
-                        Variavel var = createVariableIfNotExists($2.label, $5.type, $5.label, $5.details == REAL_NUMBER_ID ? true : false, true);
-                        
-                        $$.label = $2.label;
+                        string tempCode = gentempcode();
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $4.type, $4.label, $4.details == REAL_NUMBER_ID ? true : false);
+
+                        $$.label = tempCode;
                         $$.type = $4.type;
-                        $$.translation = $5.translation + "\t" + var.getRealVarLabel() + " = " + $5.label + ";\n";
-                    };
+                        $$.translation = $4.translation + "\t" + var.getRealVarLabel() + " = " + $4.label + ";\n";
+                    }
+
+CONST_VARS          : CONST_VARS ',' CONST_VAR_DECLARTION { $$.translation = $1.translation + $3.translation; }
+                    | CONST_VAR_DECLARTION { $$.translation = $1.translation; }
+
+CONST_VAR_DECLARTION: ID RETURN_TYPE {
+                        string tempCode = gentempcode();
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
+
+                        $$.label = tempCode;
+                        $$.type = $2.type;
+                        $$.translation = "";
+                    }
+                    |
+                    ID RETURN_TYPE '=' EXPRESSION {
+                        if ($2.type != "void" && $2.type != $4.type) {
+                            yyerror("The type of the expression (" + $4.type + ") is not compatible with the type of the variable (" + $2.type + ")", "Type check error");
+                            return -1;
+                        }
+
+                        string tempCode = gentempcode();
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $4.type, $4.label, $4.details == REAL_NUMBER_ID ? true : false, true);
+
+                        $$.label = tempCode;
+                        $$.type = $4.type;
+                        $$.translation = $4.translation + "\t" + var.getRealVarLabel() + " = " + $4.label + ";\n";
+                    }
+                    
 
 ASSIGNMENT          : ID '=' EXPRESSION {
                         bool found = false;
-                        Variavel variavel = findVariableByName($1.label, found);
+                        Variavel* variavel = findVariableByName($1.label, found);
 
                         if (!found) {
                             yyerror("Cannot found symbol \"" + $1.label + "\"");
                             return -1;
                         }
 
-                        if (variavel.getVarType() != $3.type) {
-                            yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel.getVarType() + ")");
-                            return -1;
+                        string varType = isVoid(variavel->getVarType()) ? $3.type : variavel->getVarType();
+
+                        if (variavel->alreadyInitialized()) {
+                            if (variavel->getVarType() != $3.type) {
+                                yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel->getVarType() + ")");
+                                return -1;
+                            }
+
+                            if (variavel->isConstant()) {
+                                yyerror("Cannot assign a value to a constant variable");
+                                return -1;
+                            }
                         }
 
-                        if (variavel.isConstant()) {
-                            yyerror("Cannot assign a value to a constant variable");
-                            return -1;
-                        }
+                        variavel->setVarType(varType);
+                        variavel->setVarValue($3.label);
 
-                        variavel.setVarValue($3.label);
-
-                        if (variavel.isNumber()) {
-                            variavel.setIsReal($3.details == REAL_NUMBER_ID);
+                        if (variavel->isNumber()) {
+                            variavel->setIsReal($3.details == REAL_NUMBER_ID);
                         }
 
                         $$.label = $1.label;
-                        $$.type = variavel.getVarType();
+                        $$.type = varType;
 
-                        $$.translation = $1.translation + $3.translation + "\t" + variavel.getRealVarLabel() + " = " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + "\t" + variavel->getRealVarLabel() + " = " + $3.label + ";\n";
                     };
 
 /**
@@ -288,28 +329,36 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
 
-                        string firstExpression = getAsBoolean($1);
-                        string secondExpression = getAsBoolean($3);
+                        Atributo firstExpressionConversion = {};
+                        Atributo firstExpression = convertType(firstExpressionConversion, $1, BOOLEAN_ID);
 
-                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + firstExpression + " && " + secondExpression + ";\n");
+                        Atributo secondExpressionConversion = {};
+                        Atributo secondExpression = convertType(secondExpressionConversion, $3, BOOLEAN_ID);
+
+                        $$.translation = $1.translation + indent($3.translation) + firstExpression.translation + secondExpression.translation + indent(getType($$) + " " + $$.label + " = " + firstExpression.label + " && " + secondExpression.label + ";\n");
                     }
                     |
                     EXPRESSION TK_OR EXPRESSION {
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
 
-                        string firstExpression = getAsBoolean($1);
-                        string secondExpression = getAsBoolean($3);
+                        Atributo firstExpressionConversion = {};
+                        Atributo firstExpression = convertType(firstExpressionConversion, $1, BOOLEAN_ID);
 
-                        $$.translation = $1.translation + indent($3.translation + getType($$) + " " + $$.label + " = " + firstExpression + " || " + secondExpression + ";\n");
+                        Atributo secondExpressionConversion = {};
+                        Atributo secondExpression = convertType(secondExpressionConversion, $3, BOOLEAN_ID);
+
+                        $$.translation = $1.translation + indent($3.translation) + firstExpression.translation + secondExpression.translation + indent(getType($$) + " " + $$.label + " = " + firstExpression.label + " || " + secondExpression.label + ";\n");
                     }
                     |
                     TK_NOT EXPRESSION {
-                        string expression = getAsBoolean($2);
-
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        $$.translation = $2.translation + $$.label + " = !(" + expression + ");\n";
+
+                        Atributo expressionConversion = {};
+                        Atributo expression = convertType(expressionConversion, $2, BOOLEAN_ID);
+
+                        $$.translation = $2.translation + expression.translation + indent(getType($$) + " " + $$.label + " = " + expression.label + " != 1;\n");
                     }
 
 /**
