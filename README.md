@@ -90,7 +90,7 @@ Lê-se da seguinte forma:
 Para cada linha i e coluna j, T[i][j] = valor resultado da conversão.
 Caso o valor resultado esteja sendo representado por um **X** significa que a conversão não é aceita pela linguagem.
 
--               |   Number           | Boolean      | Character
+\-              |   Number           | Boolean      | Character
 :------         |   :------:         | :------:     | :------:
 **Number**      |   Number           | Boolean      | Character
 **Boolean**     |   Number (0 ou 1)  | Boolean      | **X**
