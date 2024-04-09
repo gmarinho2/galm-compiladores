@@ -26,15 +26,14 @@ else:
     shutil.rmtree(test_path)
     os.makedirs(test_path)
 
-time.sleep(0.5)
+time.sleep(0.1)
 
 if (os.system(f"make compile >/dev/null 2> {test_path}/compile.err") != 0):
     print("\nThe project could not be compiled")
     exit(0)
 
-time.sleep(0.5)
+time.sleep(0.1)
 print("The project has been compiled successfully\nStarting the tests:\n")
-time.sleep(0.7)
 
 for file in test_files:
 
@@ -43,7 +42,7 @@ for file in test_files:
 
     if (result != 0):
         os.rename(f"{test_path}/{file}.cpp", f"{test_path}/{file}.err")
-        print(f"Error while we are creating intermediate code for {file}\n")
+        print(f"\033[1;31mError while we are creating intermediate code for {file}\033[0m\n")
         continue
 
     print(f"Compiling {file} using g++...")
@@ -51,10 +50,18 @@ for file in test_files:
     result = os.system(f"g++ {test_path}/{file}.cpp -o {test_path}/{file}.exe > {test_path}/{file}.cpp.err")
 
     if (result != 0):
-        print(f"Error while compiling {file}\n")
+        print(f"\033[1;31mError while compiling {file}\033[0m\n")
         continue
 
     print(f"Testing {file}...")
+
+    result = os.system(f"./{test_path}/{file}.exe") 
+    # delete the executable file
+    os.remove(f"{test_path}/{file}.exe")
+
+    if (result != 0):
+        print(f"\033[1;31mError while compiling {file}\033[0m\n")
+        continue
 
     if result == 0:
         success += 1
@@ -62,8 +69,6 @@ for file in test_files:
     else:
         print(f"{file} has failed\n")
     
-    time.sleep(0.1)
-
 if (success == test_len):
     print("All tests have been successfully completed, congratulations!")
 else:
