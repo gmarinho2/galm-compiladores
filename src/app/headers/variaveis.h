@@ -10,13 +10,22 @@ using namespace str;
 namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
 
+    void yyerror(string message, string error = "Syntax error") {
+        cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
+        exit(1);
+    }
+
     const string NUMBER_ID = "number";
     const string BOOLEAN_ID = "bool";
     const string STRING_ID = "string";
     const string CHAR_ID = "char";
+    const string VOID_ID = "void";
 
     const string REAL_NUMBER_ID = "real";
     const string INTEGER_NUMBER_ID = "integer";
+
+    const string REAL_NUMBER_DEFINITION = "double";
+    const string INTEGER_NUMBER_DEFINITION = "int";
 
     typedef struct {
         string label;
@@ -28,13 +37,15 @@ namespace variaveis {
     class Variavel {
         private:
             string varName;
+            string varLabel;
             string varType;
             string varValue;
             bool constant;
             bool real;
         public:
-            Variavel(string varName, string varType, string varValue, bool constant, bool real = false) {
+            Variavel(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false) {
                 this->varName = varName;
+                this->varLabel = varLabel;
                 this->varType = varType;
                 this->varValue = varValue;
                 this->constant = constant;
@@ -53,6 +64,13 @@ namespace variaveis {
                 this->varValue = value;
             }
 
+            void setVarType(string type) {
+                if (varType != VOID_ID)
+                    yyerror("The symbol \"" + varName + "\" is already declared");
+
+                this->varType = type;
+            }
+
             void setIsReal(bool real) {
                 this->real = real;
             }
@@ -62,13 +80,21 @@ namespace variaveis {
             }
 
             string getVarType() {
-                return varType;
+                if (this->varType == BOOLEAN_ID) {
+                    return "int";
+                }
+
+                if (this->varType == VOID_ID) {
+                    return "void*";
+                }
+
+                return this->varType;
             }
 
             string getRealVarLabel() {
-                if (varType == NUMBER_ID) 
-                    return varName + "." +  (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID);
-                return varName;
+                if (this->varType == NUMBER_ID) 
+                    return varLabel + "." +  (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID);
+                return varLabel;
             }
 
             string getDetails() {
@@ -80,7 +106,7 @@ namespace variaveis {
             }
 
             string getTranslation() {
-                return getVarType() + " " + varName;
+                return getVarType() + " " + varLabel;
             }
 
             bool isNumber() {
@@ -91,13 +117,17 @@ namespace variaveis {
 
     string getType(Atributo atributo) {
         if (atributo.type == NUMBER_ID) {
-            return atributo.details == REAL_NUMBER_ID ? "double" : "long long int";
+            return atributo.details == REAL_NUMBER_ID ? REAL_NUMBER_DEFINITION : INTEGER_NUMBER_DEFINITION;
+        }
+
+        if (atributo.type == BOOLEAN_ID) {
+            return "int";
         }
 
         return atributo.type;
     }
 
-    const Variavel NULL_VAR = Variavel("", "", "", false);
+    Variavel NULL_VAR = Variavel("", "", "", "", false);
 
     vector<Variavel> variaveis;
 
@@ -109,10 +139,12 @@ namespace variaveis {
     string gerarCodigo(string codigo) {
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
 
-        compilador += "typedef union {\n\tdouble real;\n\tlong long int integer;\n} number;\n\n";
+        compilador += "using namespace std;\n\n";
+        //compilador += "typedef struct {\n\tint length;\n\tchar* value;\n} string;\n\n";
+        compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
 
         for (int i = 0; i < variaveis.size(); i++) {
-            compilador += variaveis[i].getTranslation() + ";\n";
+            compilador += variaveis[i].getTranslation() + "; // " + variaveis[i].getVarType() + " " + variaveis[i].getVarName() + "\n";
         }
 
         compilador += "\nint main(void) {\n" + codigo + "\treturn 0;\n}";
@@ -121,33 +153,28 @@ namespace variaveis {
         return compilador;
     }
 
-    void yyerror(string message, string error = "Syntax error") {
-        cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
-        exit(1);
-    }
-
     /**
      * Função que retorna uma variável a partir do nome
      * Ela busca na tabela de simbolos e retorna a variável
      * Caso não encontre, retorna uma instância sem nada e com o atributo found como false
      */
 
-    Variavel findVariableByName(string varName, bool &found) {
+    Variavel* findVariableByName(string varName, bool &found) {
         for (int i = 0; i < variaveis.size(); i++)
             if (variaveis[i].getVarName() == varName) {
                 found = true;
-                return variaveis[i];
+                return &variaveis[i];
             }
 
-        return NULL_VAR;
+        return &NULL_VAR;
     }
 
-    Variavel createVariableIfNotExists(string varName, string varType, string varValue, bool isReal = false, bool isConst = false,  bool isGlobal = false) {
+    Variavel createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false,  bool isGlobal = false) {
         bool found = false;
         findVariableByName(varName, found);
         
         if (!found) {
-            Variavel var = Variavel(varName, varType, varValue, isConst, isReal);
+            Variavel var = Variavel(varName, varLabel, varType, varValue, isConst, isReal);
             variaveis.push_back(var);
             return var;
         }
@@ -223,6 +250,7 @@ namespace variaveis {
         return expression;
     }
 
+    // REFAZER USANDO A FUNÇÃO DE CIMA
     string getAsBoolean(Atributo atributo) {
         if (atributo.type == BOOLEAN_ID)
             return atributo.label;
