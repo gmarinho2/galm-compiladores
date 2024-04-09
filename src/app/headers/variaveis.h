@@ -64,12 +64,16 @@ namespace variaveis {
                 return varValue;
             }
 
+            bool alreadyInitialized() {
+                return !isVoid(this->varType) && !this->varValue.empty();
+            }
+
             void setVarValue(string value) {
                 this->varValue = value;
             }
 
             void setVarType(string type) {
-                if (!isVoid(type) && !this->varValue.empty())
+                if (alreadyInitialized())
                     yyerror("The symbol \"" + varName + "\" is already declared");
 
                 this->varType = type;

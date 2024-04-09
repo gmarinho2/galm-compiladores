@@ -172,7 +172,7 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         string varType = isVoid(variavel->getVarType()) ? $3.type : variavel->getVarType();
 
-                        if (!isVoid(variavel->getVarType()) && !variavel->getVarValue().empty()) {
+                        if (variavel->alreadyInitialized()) {
                             if (variavel->getVarType() != $3.type) {
                                 yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel->getVarType() + ")");
                                 return -1;
