@@ -187,8 +187,6 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                         variavel->setVarType(varType);
                         variavel->setVarValue($3.label);
 
-                        cout << "//" << variavel->getVarType() << endl;
-
                         if (variavel->isNumber()) {
                             variavel->setIsReal($3.details == REAL_NUMBER_ID);
                         }
