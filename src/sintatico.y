@@ -89,7 +89,7 @@ EXPRESSION          : CAST { $$ = $1; }
                             return -1;
                         }
 
-                        if (var->getVarType() == VOID_ID + "*") {
+                        if (isVoid(var->getVarType())) {
                             yyerror("The variable " + $1.label + " was not initialized yet");
                             return -1;
                         }
@@ -113,10 +113,10 @@ LET_VARS            : LET_VARS ',' LET_VAR_DECLARTION { $$.translation = $1.tran
 
 LET_VAR_DECLARTION  : ID RETURN_TYPE {
                         string tempCode = gentempcode();
-                        Variavel var = createVariableIfNotExists($1.label, tempCode, "void", "", false);
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
 
                         $$.label = tempCode;
-                        $$.type = "void";
+                        $$.type = $2.type;
                         $$.translation = "";
                     }
                     |
@@ -139,10 +139,10 @@ CONST_VARS          : CONST_VARS ',' CONST_VAR_DECLARTION { $$.translation = $1.
 
 CONST_VAR_DECLARTION: ID RETURN_TYPE {
                         string tempCode = gentempcode();
-                        Variavel var = createVariableIfNotExists($1.label, tempCode, "void", "", false);
+                        Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
 
                         $$.label = tempCode;
-                        $$.type = "void";
+                        $$.type = $2.type;
                         $$.translation = "";
                     }
                     |
@@ -170,9 +170,9 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             return -1;
                         }
 
-                        string varType = variavel->getVarType() == VOID_ID + "*" ? $3.type : variavel->getVarType();
+                        string varType = isVoid(variavel->getVarType()) ? $3.type : variavel->getVarType();
 
-                        if (variavel->getVarType() != VOID_ID + "*") {
+                        if (!isVoid(variavel->getVarType()) && !variavel->getVarValue().empty()) {
                             if (variavel->getVarType() != $3.type) {
                                 yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel->getVarType() + ")");
                                 return -1;
@@ -184,8 +184,8 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             }
                         }
 
-                        variavel->setVarValue($3.label);
                         variavel->setVarType(varType);
+                        variavel->setVarValue($3.label);
 
                         cout << "//" << variavel->getVarType() << endl;
 

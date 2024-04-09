@@ -21,6 +21,10 @@ namespace variaveis {
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
 
+    bool isVoid(string voidString) {
+        return voidString == VOID_ID || voidString == "void*";
+    }
+
     const string REAL_NUMBER_ID = "real";
     const string INTEGER_NUMBER_ID = "integer";
 
@@ -65,7 +69,7 @@ namespace variaveis {
             }
 
             void setVarType(string type) {
-                if (varType != VOID_ID)
+                if (!isVoid(type) && !this->varValue.empty())
                     yyerror("The symbol \"" + varName + "\" is already declared");
 
                 this->varType = type;
