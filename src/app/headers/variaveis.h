@@ -9,6 +9,7 @@ using namespace str;
 #pragma once
 namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
+    unsigned long long int varCodeCounter = 0;
 
     void yyerror(string message, string error = "Syntax error") {
         cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
@@ -139,9 +140,15 @@ namespace variaveis {
 
     vector<Variavel> variaveis;
 
-    string gentempcode() {
-        tempCodeCounter++;
-        return "t" + to_string(tempCodeCounter);
+    string gentempcode(bool isVar = false) {
+        if(isVar) {
+            varCodeCounter++;
+            return "var" + to_string(varCodeCounter);
+        }
+        else {
+            tempCodeCounter++;
+            return "t" + to_string(tempCodeCounter);
+        }
     }
 
     string gerarCodigo(string codigo) {
@@ -204,7 +211,7 @@ namespace variaveis {
 
         if (expression.type == CHAR_ID) {
             if (toType == NUMBER_ID) {
-                cast.label = gentempcode();
+                cast.label = gentempcode(true);
                 cast.type = NUMBER_ID;
                 cast.details = INTEGER_NUMBER_ID;
                 cast.translation = indent(getType(cast) + " " + cast.label + " = (" + getType(cast) + ") " + expression.label + ";\n");
@@ -213,7 +220,7 @@ namespace variaveis {
                 Atributo newCast = {};
                 Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
 
-                cast.label = gentempcode();
+                cast.label = gentempcode(true);
                 cast.type = BOOLEAN_ID;
                 cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = " + intConversion.label + " != 0;\n");
                 return cast;
@@ -222,7 +229,7 @@ namespace variaveis {
 
         if (expression.type == BOOLEAN_ID) {
             if (toType == NUMBER_ID) {
-                cast.label = gentempcode();
+                cast.label = gentempcode(true);
                 cast.type = NUMBER_ID;
                 cast.details = INTEGER_NUMBER_ID;
                 cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + ";\n");
@@ -232,13 +239,13 @@ namespace variaveis {
 
         if (expression.type == NUMBER_ID) {
             if (toType == BOOLEAN_ID) {
-                cast.label = gentempcode();
+                cast.label = gentempcode(true);
                 cast.type = BOOLEAN_ID;
                 cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + " != 0;\n");
                 return cast;
             } else if (toType == CHAR_ID) {
                 if (expression.details == INTEGER_NUMBER_ID) {
-                    cast.label = gentempcode();
+                    cast.label = gentempcode(true);
                     cast.type = CHAR_ID;
                     cast.translation = indent(getType(cast) + " " + cast.label + " = (char) " + expression.label + ";\n");
                     return cast;
@@ -246,7 +253,7 @@ namespace variaveis {
                     Atributo newCast = {};
                     Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
 
-                    cast.label = gentempcode();
+                    cast.label = gentempcode(true);
                     cast.type = CHAR_ID;
                     cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = (char) " + intConversion.label + ";\n");
                     return cast;

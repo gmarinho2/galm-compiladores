@@ -112,7 +112,7 @@ LET_VARS            : LET_VARS ',' LET_VAR_DECLARTION { $$.translation = $1.tran
                     | LET_VAR_DECLARTION { $$.translation = $1.translation; }
 
 LET_VAR_DECLARTION  : ID RETURN_TYPE {
-                        string tempCode = gentempcode();
+                        string tempCode = gentempcode(true);
                         Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
 
                         $$.label = tempCode;
@@ -126,7 +126,7 @@ LET_VAR_DECLARTION  : ID RETURN_TYPE {
                             return -1;
                         }
 
-                        string tempCode = gentempcode();
+                        string tempCode = gentempcode(true);
                         Variavel var = createVariableIfNotExists($1.label, tempCode, $4.type, $4.label, $4.details == REAL_NUMBER_ID ? true : false);
 
                         $$.label = tempCode;
@@ -138,7 +138,7 @@ CONST_VARS          : CONST_VARS ',' CONST_VAR_DECLARTION { $$.translation = $1.
                     | CONST_VAR_DECLARTION { $$.translation = $1.translation; }
 
 CONST_VAR_DECLARTION: ID RETURN_TYPE {
-                        string tempCode = gentempcode();
+                        string tempCode = gentempcode(true);
                         Variavel var = createVariableIfNotExists($1.label, tempCode, $2.type, "", false);
 
                         $$.label = tempCode;
@@ -152,7 +152,7 @@ CONST_VAR_DECLARTION: ID RETURN_TYPE {
                             return -1;
                         }
 
-                        string tempCode = gentempcode();
+                        string tempCode = gentempcode(true);
                         Variavel var = createVariableIfNotExists($1.label, tempCode, $4.type, $4.label, $4.details == REAL_NUMBER_ID ? true : false, true);
 
                         $$.label = tempCode;
