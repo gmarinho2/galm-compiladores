@@ -148,7 +148,7 @@ namespace variaveis {
 
         compilador += "#define bool int\n";
         compilador += "#define true 1\n";
-        compilador += "#define false 0\n";
+        compilador += "#define false 0\n\n";
 
         compilador += "using namespace std;\n\n";
 
