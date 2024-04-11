@@ -89,10 +89,6 @@ namespace variaveis {
             }
 
             string getVarType() {
-                if (this->varType == BOOLEAN_ID) {
-                    return "int";
-                }
-
                 if (this->varType == VOID_ID) {
                     return "void*";
                 }
@@ -129,10 +125,6 @@ namespace variaveis {
             return atributo.details == REAL_NUMBER_ID ? REAL_NUMBER_DEFINITION : INTEGER_NUMBER_DEFINITION;
         }
 
-        if (atributo.type == BOOLEAN_ID) {
-            return "int";
-        }
-
         return atributo.type;
     }
 
@@ -154,16 +146,21 @@ namespace variaveis {
     string gerarCodigo(string codigo) {
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
 
+        compilador += "#define bool int\n";
+        compilador += "#define true 1\n";
+        compilador += "#define false 0\n";
+
         compilador += "using namespace std;\n\n";
-        //compilador += "typedef struct {\n\tint length;\n\tchar* value;\n} string;\n\n";
+
         compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
 
+        compilador += "\nint main(void) {\n";
+
         for (int i = 0; i < variaveis.size(); i++) {
-            compilador += variaveis[i].getTranslation() + "; // " + variaveis[i].getVarType() + " " + variaveis[i].getVarName() + "\n";
+            compilador += "\t" + variaveis[i].getTranslation() + ";\n";
         }
 
-        compilador += "\nint main(void) {\n" + codigo + "\treturn 0;\n}";
-
+        compilador += "\n" + codigo + "\treturn 0;\n}";
 
         return compilador;
     }

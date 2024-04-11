@@ -35,8 +35,8 @@ RESERVED_KEYS "int"
 "let"             { return TK_LET;                                }
 "const"           { return TK_CONST;                              }
   
-"true"            { yylval.label = "1"; return TK_BOOLEAN;     }
-"false"           { yylval.label = "0"; return TK_BOOLEAN;     }
+"true"            { yylval.label = "true"; return TK_BOOLEAN;     }
+"false"           { yylval.label = "false"; return TK_BOOLEAN;    }
   
 "and"             { return TK_AND;                                }
 "or"              { return TK_OR;                                 }

@@ -204,29 +204,29 @@ ASSIGNMENT          : ID '=' EXPRESSION {
  TYPES              : TK_BOOLEAN { 
                         $$.label = gentempcode();
                         $$.type = BOOLEAN_ID;
-                        $$.translation = "bool " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_REAL { 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
                         $$.details = REAL_NUMBER_ID;
-                        $$.translation = getType($$) + " " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_INTEGER  { 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
                         $$.details = INTEGER_NUMBER_ID;
-                        $$.translation = getType($$) + " " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_CHAR  { 
                         $$.label = gentempcode();
                         $$.type = CHAR_ID;
-                        $$.translation = "char " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.label + ";\n";
                     }
                     | TK_STRING  { 
                         $$.label = gentempcode();
                         $$.type = STRING_ID;
-                        $$.translation = "string " + $$.label + " = " + $1.label + ";\n";
+                        $$.translation = getType($$) + " " + $$.label + ";\n" + "\t" + $$.label + " = " + $1.label + ";\n";
                     }
 
 /**
