@@ -196,10 +196,13 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                             }
                         }
 
-                        string translation = $3.translation;
+                        if (!variavel->alreadyInitialized()) {
+                            variavel->setVarType(varType);
+                        }
 
-                        variavel->setVarType(varType);
                         variavel->setVarValue($3.label);
+
+                        string translation = $3.translation;
 
                         if (variavel->isNumber()) {
                             variavel->setIsReal($3.details == REAL_NUMBER_ID);
@@ -208,7 +211,11 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                         $$.label = $1.label;
                         $$.type = varType;
 
-                        $$.translation = $1.translation + $3.translation + indent(variavel->getRealVarLabel() + " = " + $3.label + ";\n");
+                        string realName = variavel->getRealVarLabel();
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", $3.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = $1.translation + $3.translation + indent(realName + " = " + $3.label + ";\n");
                     };
 
 /**
@@ -255,10 +262,19 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 CAST                : TK_AS EXPRESSION {
                         $1.label = $1.label.substr(1, $1.label.find(")") - 1);
 
-                        Atributo converted = convertType($$, $2, $1.label);
-                        
-                        $$ = converted;
-                        $$.translation = $2.translation + converted.translation;
+                        string translation = "";
+
+                        $$.label = gentempcode();
+                        $$.type = $1.label;
+                        $$.details = $$.type == NUMBER_ID ? INTEGER_NUMBER_ID : "";
+
+                        translate($2, translation, $1.label, $$.details);
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        translation += $$.label + " = " + $2.label + ";\n";
+
+                        $$.translation = $2.translation + indent(translation);
                     }
 
 /**

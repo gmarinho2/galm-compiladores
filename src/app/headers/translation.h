@@ -47,11 +47,27 @@ namespace translation {
                 }
             } else if (toType == BOOLEAN_ID) {
                 translation += temp + " = " + arg1.label + " != 0;\n";
+            } else if (toType == CHAR_ID) {
+                translation += temp + " = (char) " + arg1.label + ";\n";
+            } else {
+                yyerror("Cannot convert number to " + toType);
             }
-        }
-
-        if (empty(temp)) {
-            cout << "ta porra menor";
+        } else if (arg1.type == CHAR_ID) {
+            if (toType == NUMBER_ID) {
+                translation += temp + " = (int) " + arg1.label + ";\n";
+            } else if (toType == BOOLEAN_ID) {
+                translation += temp + " = " + arg1.label + " != 0;\n";
+            } else {
+                yyerror("Cannot convert char to " + toType);
+            }
+        } else if (arg1.type == BOOLEAN_ID) {
+            if (toType == NUMBER_ID) {
+                translation += temp + " = " + arg1.label + ";\n";
+            } else {
+                yyerror("Cannot convert boolean to " + toType);
+            }
+        } else {
+            yyerror("Cannot convert " + arg1.type + " to " + toType);
         }
 
         arg1.label = temp;
