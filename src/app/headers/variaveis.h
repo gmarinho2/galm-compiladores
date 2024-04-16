@@ -11,9 +11,23 @@ namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
 
+    unsigned long long int currentLine = 1;
+
+    void addLine() {
+        currentLine++;
+    }
+
+    int getCurrentLine() {
+        return currentLine;
+    }
+
     void yyerror(string message, string error = "Syntax error") {
-        cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
+        cout << "\033[1;31m" << error << ": " << message << " (line " << currentLine << ")" << endl << "\033[0m";
         exit(1);
+    }
+
+    void yywarning(string message, string warning = "Warning") {
+        cout << "\033[1;33m" << warning << ": " << message << " (line " << currentLine << ")" << endl << "\033[0m";
     }
 
     const string NUMBER_ID = "number";
@@ -47,14 +61,20 @@ namespace variaveis {
             string varValue;
             bool constant;
             bool real;
+            bool temp;
         public:
-            Variavel(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false) {
+            Variavel(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false, bool temp = false) {
                 this->varName = varName;
                 this->varLabel = varLabel;
                 this->varType = varType;
                 this->varValue = varValue;
                 this->constant = constant;
                 this->real = real;
+                this->temp = temp;
+            }
+
+            bool isTemp() {
+                return temp;
             }
 
             string getVarName() {
@@ -75,7 +95,7 @@ namespace variaveis {
 
             void setVarType(string type) {
                 if (alreadyInitialized())
-                    yyerror("The symbol \"" + varName + "\" is already declared");
+                    yyerror("The symbol \"" + varName + "\" was already initialized with a value");
 
                 this->varType = type;
             }
@@ -91,6 +111,12 @@ namespace variaveis {
             string getVarType() {
                 if (this->varType == VOID_ID) {
                     return "void*";
+                }
+
+                if (this->temp) {
+                    if (this->varType == NUMBER_ID) {
+                        return real ? "float" : "int";
+                    }
                 }
 
                 return this->varType;
@@ -172,26 +198,29 @@ namespace variaveis {
      */
 
     Variavel* findVariableByName(string varName, bool &found) {
-        for (int i = 0; i < variaveis.size(); i++)
+        for (int i = 0; i < variaveis.size(); i++) {
             if (variaveis[i].getVarName() == varName) {
                 found = true;
                 return &variaveis[i];
             }
+        }
 
         return &NULL_VAR;
     }
 
-    Variavel createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false,  bool isGlobal = false) {
-        bool found = false;
-        findVariableByName(varName, found);
+    Variavel createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
+        string realVarName = isTemp ? "@" + varName : varName;
         
+        bool found = false;
+        findVariableByName(realVarName, found);
+
         if (!found) {
-            Variavel var = Variavel(varName, varLabel, varType, varValue, isConst, isReal);
+            Variavel var = Variavel(realVarName, varLabel, varType, varValue, isConst, isReal, isTemp);
             variaveis.push_back(var);
             return var;
         }
 
-        yyerror("The symbol \"" + varName + "\" is already declared");
+        yyerror("The symbol \"" + realVarName + "\" is already declared");
         return NULL_VAR;
     }
 

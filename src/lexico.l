@@ -22,7 +22,7 @@ RESERVED_KEYS "int"
 %%
 
 {SPACE}+          { /* ignore whitespace */                       }
-"\n"              { /* ignorar break line */                      }
+"\n"              { return TK_BREAK_LINE;                      }
 {RESERVED_KEYS}   { yylval.label = yytext; return TK_FORBIDDEN;   }
   
 "if"              { return TK_IF;                                 }
@@ -49,10 +49,11 @@ RESERVED_KEYS "int"
 "!="              { return TK_DIFFERENT;                          }
 ">"               { return TK_GREATER;                            }
 "<"               { return TK_LESS;                               }
-  
+
+"//"              { return TK_DIV;                                }
 [+\-*/|]          { return *yytext;                               }
 [(){}[\]]         { return *yytext;                               }
-[;,~:=]           { return *yytext;                               }
+[;,~:=%]          { return *yytext;                               }
 
 ("("{TYPES}")")*  { yylval.label = yytext; return TK_AS;          }
 {TYPES}("[]")*    { yylval.label = yytext; return TK_TYPE;        }

@@ -1,3 +1,7 @@
-let a = 5;
-let b = 6;
-let c = a + b;
+let a = 1
+let b = a + 1
+
+let c
+c = 1
+
+const t1, t2, t3, t4 = 1, t5: number
