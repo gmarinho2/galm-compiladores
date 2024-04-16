@@ -3,6 +3,6 @@ let numberToNumber = (number) 1
 let booleanToNumber = (number) true
 let charToNumber = (number) 'a'
 
-let numberToChar = (char) 97
+let numberToChar = (char)
 
 let numberToBoo = (bool) 97
