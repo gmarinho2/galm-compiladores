@@ -9,7 +9,7 @@ compile:
 	mkdir -p output
 	lex -o output/lexico.yy.c src/lexico.l
 	yacc -d src/sintatico.y -o output/parser.tab.c -Wcounterexamples
-	g++ -o output/compiler.exe output/parser.tab.c -ll
+	g++ -o ./output/compiler.exe ./output/parser.tab.c -ll
 
 scanner:
 	mkdir -p output
