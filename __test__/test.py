@@ -36,7 +36,7 @@ time.sleep(0.1)
 
 if (os.system(f"make compile >/dev/null") != 0):
     print("\nThe project could not be compiled")
-    exit(0)
+    exit(1)
 
 time.sleep(0.1)
 print("The project has been compiled successfully\nStarting the tests:\n")
