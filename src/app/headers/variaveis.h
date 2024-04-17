@@ -11,9 +11,23 @@ namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
 
+    unsigned long long int currentLine = 1;
+
+    void addLine() {
+        currentLine++;
+    }
+
+    int getCurrentLine() {
+        return currentLine;
+    }
+
     void yyerror(string message, string error = "Syntax error") {
-        cout << "\033[1;31m" << error << ": " << message << endl << "\033[0m";
+        cout << "\033[1;31m" << error << ": " << message << " (line " << currentLine << ")" << endl << "\033[0m";
         exit(1);
+    }
+
+    void yywarning(string message, string warning = "Warning") {
+        cout << "\033[1;33m" << warning << ": " << message << " (line " << currentLine << ")" << endl << "\033[0m";
     }
 
     const string NUMBER_ID = "number";
@@ -47,14 +61,20 @@ namespace variaveis {
             string varValue;
             bool constant;
             bool real;
+            bool temp;
         public:
-            Variavel(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false) {
+            Variavel(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false, bool temp = false) {
                 this->varName = varName;
                 this->varLabel = varLabel;
                 this->varType = varType;
                 this->varValue = varValue;
                 this->constant = constant;
                 this->real = real;
+                this->temp = temp;
+            }
+
+            bool isTemp() {
+                return temp;
             }
 
             string getVarName() {
@@ -75,7 +95,7 @@ namespace variaveis {
 
             void setVarType(string type) {
                 if (alreadyInitialized())
-                    yyerror("The symbol \"" + varName + "\" is already declared");
+                    yyerror("The symbol \"" + varName + "\" was already initialized with a value");
 
                 this->varType = type;
             }
@@ -89,12 +109,14 @@ namespace variaveis {
             }
 
             string getVarType() {
-                if (this->varType == BOOLEAN_ID) {
-                    return "int";
-                }
-
                 if (this->varType == VOID_ID) {
                     return "void*";
+                }
+
+                if (this->temp) {
+                    if (this->varType == NUMBER_ID) {
+                        return real ? "float" : "int";
+                    }
                 }
 
                 return this->varType;
@@ -129,10 +151,6 @@ namespace variaveis {
             return atributo.details == REAL_NUMBER_ID ? REAL_NUMBER_DEFINITION : INTEGER_NUMBER_DEFINITION;
         }
 
-        if (atributo.type == BOOLEAN_ID) {
-            return "int";
-        }
-
         return atributo.type;
     }
 
@@ -154,16 +172,21 @@ namespace variaveis {
     string gerarCodigo(string codigo) {
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
 
+        compilador += "#define bool int\n";
+        compilador += "#define true 1\n";
+        compilador += "#define false 0\n\n";
+
         compilador += "using namespace std;\n\n";
-        //compilador += "typedef struct {\n\tint length;\n\tchar* value;\n} string;\n\n";
+
         compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
 
+        compilador += "\nint main(void) {\n";
+
         for (int i = 0; i < variaveis.size(); i++) {
-            compilador += variaveis[i].getTranslation() + "; // " + variaveis[i].getVarType() + " " + variaveis[i].getVarName() + "\n";
+            compilador += "\t" + variaveis[i].getTranslation() + ";\n";
         }
 
-        compilador += "\nint main(void) {\n" + codigo + "\treturn 0;\n}";
-
+        compilador += "\n" + codigo + "\treturn 0;\n}";
 
         return compilador;
     }
@@ -175,94 +198,30 @@ namespace variaveis {
      */
 
     Variavel* findVariableByName(string varName, bool &found) {
-        for (int i = 0; i < variaveis.size(); i++)
+        for (int i = 0; i < variaveis.size(); i++) {
             if (variaveis[i].getVarName() == varName) {
                 found = true;
                 return &variaveis[i];
             }
+        }
 
         return &NULL_VAR;
     }
 
-    Variavel createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false,  bool isGlobal = false) {
-        bool found = false;
-        findVariableByName(varName, found);
+    Variavel createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
+        string realVarName = isTemp ? "@" + varName : varName;
         
+        bool found = false;
+        findVariableByName(realVarName, found);
+
         if (!found) {
-            Variavel var = Variavel(varName, varLabel, varType, varValue, isConst, isReal);
+            Variavel var = Variavel(realVarName, varLabel, varType, varValue, isConst, isReal, isTemp);
             variaveis.push_back(var);
             return var;
         }
 
-        yyerror("The symbol \"" + varName + "\" is already declared");
+        yyerror("The symbol \"" + realVarName + "\" is already declared");
         return NULL_VAR;
-    }
-
-    /**
-     * Função que converte um tipo de dado para outro
-     * 
-     * Retorna uma instância de Atributo, onde o label é como realmente será feito a conversão
-     * e o type é o tipo de dado que será convertido
-    */
-
-    Atributo convertType(Atributo cast, Atributo &expression, string toType) {
-        if (expression.type == toType)
-            return {expression.label, expression.type, expression.details};
-
-        if (expression.type == CHAR_ID) {
-            if (toType == NUMBER_ID) {
-                cast.label = gentempcode(true);
-                cast.type = NUMBER_ID;
-                cast.details = INTEGER_NUMBER_ID;
-                cast.translation = indent(getType(cast) + " " + cast.label + " = (" + getType(cast) + ") " + expression.label + ";\n");
-                return cast;
-            } else if (toType == BOOLEAN_ID) {
-                Atributo newCast = {};
-                Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
-
-                cast.label = gentempcode(true);
-                cast.type = BOOLEAN_ID;
-                cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = " + intConversion.label + " != 0;\n");
-                return cast;
-            }
-        }
-
-        if (expression.type == BOOLEAN_ID) {
-            if (toType == NUMBER_ID) {
-                cast.label = gentempcode(true);
-                cast.type = NUMBER_ID;
-                cast.details = INTEGER_NUMBER_ID;
-                cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + ";\n");
-                return cast;
-            }
-        }
-
-        if (expression.type == NUMBER_ID) {
-            if (toType == BOOLEAN_ID) {
-                cast.label = gentempcode(true);
-                cast.type = BOOLEAN_ID;
-                cast.translation = indent(getType(cast) + " " + cast.label + " = " + expression.label + " != 0;\n");
-                return cast;
-            } else if (toType == CHAR_ID) {
-                if (expression.details == INTEGER_NUMBER_ID) {
-                    cast.label = gentempcode(true);
-                    cast.type = CHAR_ID;
-                    cast.translation = indent(getType(cast) + " " + cast.label + " = (char) " + expression.label + ";\n");
-                    return cast;
-                } else {
-                    Atributo newCast = {};
-                    Atributo intConversion = convertType(newCast, expression, NUMBER_ID);
-
-                    cast.label = gentempcode(true);
-                    cast.type = CHAR_ID;
-                    cast.translation = intConversion.translation + indent(getType(cast) + " " + cast.label + " = (char) " + intConversion.label + ";\n");
-                    return cast;
-                }
-            }
-        }
-        
-        yyerror("Not supported explicity conversion expression " + expression.type + " to " + toType);
-        return expression;
     }
 
     // REFAZER USANDO A FUNÇÃO DE CIMA
