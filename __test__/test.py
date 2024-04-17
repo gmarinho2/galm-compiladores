@@ -34,7 +34,7 @@ else:
 
 time.sleep(0.1)
 
-if (os.system(f"make compile >/dev/null 2> {test_path}/compile.err") != 0):
+if (os.system(f"make compile >/dev/null") != 0):
     print("\nThe project could not be compiled")
     exit(0)
 
@@ -81,3 +81,4 @@ else:
     print(f"{success}/{test_len} tests passed")
     COLOR = GREEN_COLOR if success / test_len > 0.75 else RED_COLOR
     print(f"{COLOR}Success rate: {((success/test_len) * 100):.2f}%")
+    exit(1)
