@@ -22,10 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bison flex
 
-      - name: Install G++
+      - name: Install libfl-dev & G++
         run: |
-          sudo apt-get install libfl-dev
-          sudo apt-get install g++
+          sudo apt-get install -y libfl-dev g++
 
       - name: Run Test
         run: |
