@@ -21,6 +21,8 @@ int yylex(void);
 
 %token TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
+%token TK_PRINTLN TK_PRINT TK_SCAN
+
 %token TK_FORBIDDEN
 
 %start S
@@ -241,6 +243,17 @@ CAST                : TK_AS EXPRESSION {
                         $$ = converted;
                         $$.translation = $2.translation + converted.translation;
                     }
+                    | TK_PRINTLN '(' EXPRESSION ')'
+                    {
+                        $$.translation = $3.translation + "\tcout << " + $3.label + " << endl;\n";
+                    }
+			
+                    | TK_PRINT '(' EXPRESSION ')'
+                    {
+                            $$.translation = $3.translation + "\tcout << " + $3.label + ";\n";
+                        
+                    }
+
 
 /**
  * Arithmetic expressions
