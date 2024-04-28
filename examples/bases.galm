@@ -1,0 +1,4 @@
+let decimal = 100
+let octal = 0o144
+let hex = 0x64
+let binary = 0b1100100
