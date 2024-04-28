@@ -50,6 +50,13 @@ RESERVED_KEYS "int"
 ">"               { return TK_GREATER;                            }
 "<"               { return TK_LESS;                               }
 
+"&"               { return TK_BITAND;                             }
+"|"               { return TK_BITOR;                              }
+"~"               { return TK_BITNOT;                             }
+"^"               { return TK_BITXOR;                             }
+"<<"              { return TK_BITLEFT;                            }
+">>"              { return TK_BITRIGHT;                           }
+
 "//"              { return TK_DIV;                                }
 [+\-*/|]          { return *yytext;                               }
 [(){}[\]]         { return *yytext;                               }
