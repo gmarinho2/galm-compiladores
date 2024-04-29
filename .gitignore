@@ -1,4 +1,5 @@
 output/
 __test__/tests/
 .vscode/
+*/current.*
 examples/current.galm

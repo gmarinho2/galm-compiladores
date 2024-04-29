@@ -170,6 +170,8 @@ namespace variaveis {
     }
 
     string gerarCodigo(string codigo) {
+        int assertCount = countSubstring(codigo, "assert");
+
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
 
         compilador += "#define bool int\n";
@@ -201,7 +203,13 @@ namespace variaveis {
                 compilador += "\t" + variaveis[i].getTranslation() + ";\n";
         }
 
-        compilador += "\n" + codigo + "\treturn 0;\n}";
+        compilador += "\n" + codigo;
+
+        if (assertCount > 0) {
+            compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\";\n";
+        }
+
+        compilador += "\treturn 0;\n}";
 
         return compilador;
     }

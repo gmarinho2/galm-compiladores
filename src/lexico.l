@@ -22,12 +22,12 @@ LETTER [A-Za-z]
 UNDERSCORE _
 
 NUMBER ({DIGIT})+
-REAL [-+]?(((({DIGIT}+)|({DIGIT}*\.{DIGIT}+))([eE][-+]?{DIGIT}+)?))
+REAL [-]?(((({DIGIT}+)|({DIGIT}*\.{DIGIT}+))([eE][-+]?{DIGIT}+)?))
 
-BINARY_INTEGER [-+]?0[bB][01]+
-OCTAL_INTEGER [-+]?0[oO][0-7]+
-HEXA_INTEGER [-+]?0[xX][0-9a-fA-F]+
-DECIMAL_INTEGER [-+]?{NUMBER}
+BINARY_INTEGER [-]?0[bB][01]+
+OCTAL_INTEGER [-]?0[oO][0-7]+
+HEXA_INTEGER [-]?0[xX][0-9a-fA-F]+
+DECIMAL_INTEGER [-]?{NUMBER}
 
 CHAR \'({LETTER}|{DIGIT})\'
 STRING \"({LETTER}|{DIGIT})*\"
@@ -43,6 +43,8 @@ RESERVED_KEYS "int"
 {SPACE}+            { /* ignore whitespace */                       }
 "\n"                { return TK_BREAK_LINE;                         }
 {RESERVED_KEYS}     { yylval.label = yytext; return TK_FORBIDDEN;   }
+
+"assert"            { return TK_ASSERT_EQUALS;                      }
 
 "if"                { return TK_IF;                                 }
 "else"              { return TK_ELSE;                               }
@@ -72,7 +74,6 @@ RESERVED_KEYS "int"
 "!="                { return TK_DIFFERENT;                          }
 ">="                { return TK_GREATER_EQUALS;                     }
 "<="                { return TK_LESS_EQUALS;                        }
-"!="                { return TK_DIFFERENT;                          }
 ">"                 { return TK_GREATER;                            }
 "<"                 { return TK_LESS;                               }
 
