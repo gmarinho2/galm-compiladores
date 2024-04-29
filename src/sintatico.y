@@ -26,6 +26,8 @@ int yylex(void);
 
 %token TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS TK_DIV
 
+%token TK_BITAND TK_BITOR TK_BITXOR TK_BITLEFT TK_BITRIGHT TK_BITNOT
+
 %token TK_FORBIDDEN
 
 %start S
@@ -36,6 +38,8 @@ int yylex(void);
 %left '*''/'TK_DIV'%'
 %left '+''-' TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 %left TK_NOT
+%left TK_BITAND TK_BITOR TK_BITXOR TK_BITNOT TK_BITLEFT TK_BITRIGHT
+
 
 %%
 
@@ -88,6 +92,7 @@ EXPRESSION          : CAST { $$ = $1; }
                     | RELATIONAL { $$ = $1; }
                     | ASSIGNMENT { $$ = $1; }
                     | TYPES { $$ = $1; }
+                    | BITWISE {$$ = $1;}
                     | '(' EXPRESSION ')' { $$ = $2; }
                     | ID {
                         bool found = false;
@@ -210,10 +215,9 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         $$.label = $1.label;
                         $$.type = varType;
+                        $$.details = $1.details;
 
                         string realName = variavel->getRealVarLabel();
-
-                        createVariableIfNotExists($$.label, $$.label, $$.type, "", $3.details == REAL_NUMBER_ID ? true : false, true, true);
 
                         $$.translation = $1.translation + $3.translation + indent(realName + " = " + $3.label + ";\n");
                     };
@@ -616,6 +620,98 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
                         $$.translation = $1.translation + indent(translation);
                     }
+
+BITWISE             : EXPRESSION TK_BITAND EXPRESSION {
+                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
+                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
+                                yyerror("The operator & must be used with a number or char type");
+                            }
+                        }
+                        string translation = $1.translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($3.translation + $$.label + " = " + $1.label + " & " + $3.label + ";\n");
+                    }
+                    |
+                    EXPRESSION TK_BITOR EXPRESSION {
+                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
+                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
+                                yyerror("The operator | must be used with a number or char type");
+                            }
+                        }
+                        string translation = $1.translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($3.translation + $$.label + " = " + $1.label + " | " + $3.label + ";\n");
+                    }
+                    |
+                    EXPRESSION TK_BITXOR EXPRESSION {
+                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
+                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
+                                yyerror("The operator ^ must be used with a number or char type");
+                            }
+                        }
+                        string translation = $1.translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($3.translation + $$.label + " = " + $1.label + " ^ " + $3.label + ";\n");
+                    }
+                    |
+                    TK_BITNOT EXPRESSION {
+                        if($2.type != CHAR_ID && $2.type != NUMBER_ID){
+                            if($2.details == REAL_NUMBER_ID)
+                                yyerror("The operator ~ must be used with a number or char type");
+                        }
+                        string translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($2.translation + $$.label + " = " + "~ " + $2.label + ";\n");
+                    }
+                    |
+                    EXPRESSION TK_BITLEFT EXPRESSION {
+                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
+                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
+                                yyerror("The operator << must be used with a number or char type");
+                            }
+                        }
+                        string translation = $1.translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($3.translation + $$.label + " = " + $1.label + " << " + $3.label + ";\n");
+                    }
+                    |
+                    EXPRESSION TK_BITRIGHT EXPRESSION {
+                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
+                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
+                                yyerror("The operator >> must be used with a number or char type");
+                            }
+                        }
+
+                        string translation = $1.translation;
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID ? true : false, true, true);
+
+                        $$.translation = translation + indent($3.translation + $$.label + " = " + $1.label + " >> " + $3.label + ";\n");
+
+                    }
+
 
 /** Control structures 
  *

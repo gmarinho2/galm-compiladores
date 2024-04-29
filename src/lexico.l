@@ -51,6 +51,13 @@ RESERVED_KEYS "int"
 "or"                { return TK_OR;                                 }
 "!"|"not"           { return TK_NOT;                                }
 
+"&"                 { return TK_BITAND;                             }
+"|"                 { return TK_BITOR;                              }
+"~"                 { return TK_BITNOT;                             }
+"^"                 { return TK_BITXOR;                             }
+"<<"                { return TK_BITLEFT;                            }
+">>"                { return TK_BITRIGHT;                           }
+
 "=="                { return TK_EQUALS;                             }
 ">="                { return TK_GREATER_EQUALS;                     }
 "<="                { return TK_LESS_EQUALS;                        }
@@ -68,8 +75,8 @@ RESERVED_KEYS "int"
 {OTHER_TYPES}       { yylval.label = yytext; return TK_TYPE;        }
  
 "as"                { return TK_AS;                                 }
-{STRING}		    { yylval.label = yytext; return TK_STRING;      }
-{CHAR}		        { yylval.label = yytext; return TK_CHAR;        }
+{STRING}		        { yylval.label = yytext; return TK_STRING;      }
+{CHAR}		          { yylval.label = yytext; return TK_CHAR;        }
 
 {BINARY_INTEGER}    { yylval.label = toDecimal(yytext, 2); 
                       return TK_INTEGER;     
@@ -83,7 +90,7 @@ RESERVED_KEYS "int"
 {DECIMAL_INTEGER}   { yylval.label = yytext; return TK_INTEGER;     }
 
 {REAL}	            { yylval.label = yytext; return TK_REAL;        }
-{ID}		        { yylval.label = yytext; return TK_ID;          }   
+{ID}		            { yylval.label = yytext; return TK_ID;          }   
 
 .                   { *yytext;                                      }
 
