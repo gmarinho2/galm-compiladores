@@ -2,7 +2,17 @@
 #include <string>
 
 string toDecimal(string str, int base) {
-    return to_string(stoi(str.substr(2, str.length() - 2), nullptr, base));
+    bool negative = str.rfind("-", 0) == 0;
+    bool startsWith = str.rfind("+", 0) == 0 || negative;
+    int firstCharacter = 2 + startsWith;
+
+    int decimal = stoi(str.substr(firstCharacter, str.length() - 2), nullptr, base);
+
+    if (negative) {
+        decimal = -decimal;
+    }
+
+    return to_string(decimal);
 }
 %}
 

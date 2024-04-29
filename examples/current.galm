@@ -1,9 +1,4 @@
-let a = 1
-
-let b = a = a + 1
-
-let c = a = b = 1
-
-let d = a = b = c = 3
-
-let e = a = b = c = 5
+let decimal = 100
+let octal = -0o144
+let hex = -0x64
+let binary = -0b1100100
