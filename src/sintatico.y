@@ -28,6 +28,8 @@ int yylex(void);
 
 %token TK_FORBIDDEN
 
+%token TK_PRINTLN TK_PRINT TK_SCAN
+
 %start S
 
 %right '='
@@ -275,6 +277,16 @@ CAST                : TK_AS EXPRESSION {
                         translation += $$.label + " = " + $2.label + ";\n";
 
                         $$.translation = $2.translation + indent(translation);
+                    }
+                    | TK_PRINTLN '(' EXPRESSION ')'
+                    {
+                        $$.translation = $3.translation + "\tcout << " + $3.label + " << endl;\n";
+                    }
+			
+                    | TK_PRINT '(' EXPRESSION ')'
+                    {
+                            $$.translation = $3.translation + "\tcout << " + $3.label + ";\n";
+                        
                     }
 
 /**

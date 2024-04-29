@@ -30,6 +30,8 @@ RESERVED_KEYS "int"
 "repeat"          { return TK_REPEAT;                             }
 "until"           { return TK_UNTIL;                              }
 "for"             { return TK_FOR;                                }
+"println"         { return TK_PRINTLN;                            }
+"print"           { return TK_PRINT;                              }
   
 "fn"              { return TK_FUNCTION;                           }
 "let"             { return TK_LET;                                }
