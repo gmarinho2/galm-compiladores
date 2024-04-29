@@ -59,6 +59,7 @@ RESERVED_KEYS "int"
 ">>"                { return TK_BITRIGHT;                           }
 
 "=="                { return TK_EQUALS;                             }
+"!="                { return TK_DIFFERENT;                          }
 ">="                { return TK_GREATER_EQUALS;                     }
 "<="                { return TK_LESS_EQUALS;                        }
 "!="                { return TK_DIFFERENT;                          }

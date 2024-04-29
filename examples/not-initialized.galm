@@ -4,4 +4,4 @@ let b = a + 1
 let c
 c = 1
 
-const t1, t2, t3, t4 = 1, t5: number
+const t1 = 1, t2: number = 5
