@@ -146,7 +146,7 @@ EXPRESSION          : CAST { $$ = $1; }
                         
                         createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        $$.translation = $$.label + " = " + realName + ";\n";
+                        $$.translation = $$.label + " = " + realName + ";// eita\n";
 
                     }
 
@@ -524,7 +524,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = BOOLEAN_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
                         translation += $$.label + " = " + $1.label + " && " + $3.label + ";\n";
                         $$.translation = $1.translation + translation;
@@ -538,7 +538,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
                         $$.label = gentempcode();
                         $$.type = BOOLEAN_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
                         translation += $$.label + " = " + $1.label + " || " + $3.label + ";\n";
                         $$.translation = $1.translation + translation;
@@ -551,8 +551,9 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
+                        translation += $$.label + " = !" + $2.label + ";\n";
                         $$.translation = $2.translation + translation;
                     }
 

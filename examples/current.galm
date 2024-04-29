@@ -1,19 +1,5 @@
-let multi = 1 + 1 * 2
-let div = 1.0 + 2.0 / 2.0 - 1.0
-let exp = (1.0 + 1.0) * 2.0
+let a = 1 and 20
+let b = !1
 
-assert multi 3
-assert div 1.0
-assert exp 4.0
-
-let multiDiv = 2.0 * 2.0 / 4.0
-let divMulti = -2.0 / 2.0 * 4.0
-
-assert multiDiv 1.0
-assert divMulti -4.0
-
-let mod = 3 % 2
-let modMultiDiv = 2 % 2 / 2 
-
-assert mod 1
-assert modMultiDiv 0
+assert a true
+assert b false

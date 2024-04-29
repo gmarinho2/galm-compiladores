@@ -1,3 +1,7 @@
 let a = 1
 let b = 2
 let c = a > b
+
+assert a 1
+assert b 2
+assert c false

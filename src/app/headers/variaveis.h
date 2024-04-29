@@ -206,7 +206,7 @@ namespace variaveis {
         compilador += "\n" + codigo;
 
         if (assertCount > 0) {
-            compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\";\n";
+            compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
         compilador += "\treturn 0;\n}";
