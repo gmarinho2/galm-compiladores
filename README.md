@@ -26,6 +26,15 @@ let teste4 = 1
 # Tipos de Dados
 
 * Number (números reais e inteiros)
+
+O suporte para números binários, octais e hexadecimais também estão inclusos:
+
+```ts
+let binary = 0b1010 // 10
+let octal = 0o12 // 10
+let hex = 0xA // 10
+```
+
 * Boolean (valores booleanos true e false)
 * Char (caracteres)
 
