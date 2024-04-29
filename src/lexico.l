@@ -44,6 +44,9 @@ RESERVED_KEYS "int"
 "\n"                { return TK_BREAK_LINE;                         }
 {RESERVED_KEYS}     { yylval.label = yytext; return TK_FORBIDDEN;   }
 
+"println"           { return TK_PRINTLN;                            }
+"print"             { return TK_PRINT;                              }
+
 "if"                { return TK_IF;                                 }
 "else"              { return TK_ELSE;                               }
 "repeat"            { return TK_REPEAT;                             }

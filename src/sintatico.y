@@ -28,6 +28,8 @@ int yylex(void);
 
 %token TK_BITAND TK_BITOR TK_BITXOR TK_BITLEFT TK_BITRIGHT TK_BITNOT
 
+%token TK_PRINTLN TK_PRINT TK_SCAN
+
 %token TK_FORBIDDEN
 
 %start S
@@ -95,6 +97,7 @@ EXPRESSION          : CAST { $$ = $1; }
                     | TYPES { $$ = $1; }
                     | BITWISE {$$ = $1;}
                     | '(' EXPRESSION ')' { $$ = $2; }
+                    | FUNCTIONS { $$ = $1; }
                     | ID {
                         bool found = false;
                         Variavel* var = findVariableByName($1.label, found);
@@ -284,6 +287,21 @@ CAST                : TK_AS EXPRESSION {
                         translation += $$.label + " = " + $2.label + ";\n";
 
                         $$.translation = $2.translation + translation;
+                    }
+
+/**
+ * Functions
+ */
+
+FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')'
+                    {
+                        $$.translation = $3.translation + "cout << " + $3.label + " << endl;\n";
+                    }
+
+                    | TK_PRINT '(' EXPRESSION ')'
+                    {
+                            $$.translation = $3.translation + "cout << " + $3.label + ";\n";
+
                     }
 
 /**
