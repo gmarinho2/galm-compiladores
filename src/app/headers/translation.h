@@ -39,18 +39,18 @@ namespace translation {
         createVariableIfNotExists(temp, temp, toType, temp, false, true, true);
 
         if (arg1.type == NUMBER_ID) {
-            if (!empty(toDetails)) {
-                if (toDetails == INTEGER_NUMBER_ID) {
-                    translation += temp + " = (int) " + arg1.label + ";\n";
-                } else if (toDetails == REAL_NUMBER_ID) {
-                    translation += temp + " = (float) " + arg1.label + ";\n";
-                }
-            } else if (toType == BOOLEAN_ID) {
+            if (toType == BOOLEAN_ID) {
                 translation += temp + " = " + arg1.label + " != 0;\n";
             } else if (toType == CHAR_ID) {
                 translation += temp + " = (char) " + arg1.label + ";\n";
+            } else if (!empty(toDetails)) {
+                if (toDetails == REAL_NUMBER_ID) {
+                    translation += temp + " = (float) " + arg1.label + ";\n";
+                } else {
+                    translation += temp + " = (int) " + arg1.label + ";\n";
+                }
             } else {
-                yyerror("Cannot convert number to " + toType);
+                yyerror("Cannot convert number to " + toType, "Type check error");
             }
         } else if (arg1.type == CHAR_ID) {
             if (toType == NUMBER_ID) {
@@ -58,16 +58,16 @@ namespace translation {
             } else if (toType == BOOLEAN_ID) {
                 translation += temp + " = " + arg1.label + " != 0;\n";
             } else {
-                yyerror("Cannot convert char to " + toType);
+                yyerror("Cannot convert char to " + toType, "Type check error");
             }
         } else if (arg1.type == BOOLEAN_ID) {
             if (toType == NUMBER_ID) {
                 translation += temp + " = " + arg1.label + ";\n";
             } else {
-                yyerror("Cannot convert boolean to " + toType);
+                yyerror("Cannot convert boolean to " + toType, "Type check error");
             }
         } else {
-            yyerror("Cannot convert " + arg1.type + " to " + toType);
+            yyerror("Cannot convert " + arg1.type + " to " + toType, "Type check error");
         }
 
         arg1.label = temp;

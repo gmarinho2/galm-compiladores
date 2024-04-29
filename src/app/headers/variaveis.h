@@ -182,8 +182,23 @@ namespace variaveis {
 
         compilador += "\nint main(void) {\n";
 
+        bool hasTemp = false;
+
         for (int i = 0; i < variaveis.size(); i++) {
+            if (variaveis[i].isTemp()) {
+                hasTemp = true;
+                continue;
+            }
+
             compilador += "\t" + variaveis[i].getTranslation() + ";\n";
+        }
+
+        if (hasTemp)
+            compilador += "\n\t/* Variáveis Temporárias */\n\n";
+
+        for (int i = 0; i < variaveis.size(); i++) {
+            if (variaveis[i].isTemp())
+                compilador += "\t" + variaveis[i].getTranslation() + ";\n";
         }
 
         compilador += "\n" + codigo + "\treturn 0;\n}";
