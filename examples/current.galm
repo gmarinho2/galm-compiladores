@@ -1,4 +1,8 @@
-let decimal = 100
-let octal = -0o144
-let hex = -0x64
-let binary = -0b1100100
+let a = 1;
+let b = 2;
+
+let c = a + b;
+
+println(a);
+print(b);
+println(c);
