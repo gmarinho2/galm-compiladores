@@ -1,2 +1,5 @@
-let t2 = 1 and 20
-let t3 = !1
+let a = 1 and 20
+let b = !1
+
+assert a true
+assert b false

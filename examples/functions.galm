@@ -4,5 +4,5 @@ let b = 2;
 let c = a + b;
 
 println(a);
-println(b);
-print(c);
+print(b);
+println(c);

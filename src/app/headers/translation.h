@@ -36,7 +36,7 @@ namespace translation {
         }
         
         string temp = gentempcode();
-        createVariableIfNotExists(temp, temp, toType, temp, false, true, true);
+        createVariableIfNotExists(temp, temp, toType, temp, toDetails == REAL_NUMBER_ID, true, true);
 
         if (arg1.type == NUMBER_ID) {
             if (toType == BOOLEAN_ID) {
