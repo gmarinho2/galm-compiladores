@@ -28,6 +28,8 @@ int yylex(void);
 
 %token TK_BITAND TK_BITOR TK_BITXOR TK_BITLEFT TK_BITRIGHT TK_BITNOT
 
+%token TK_PRINTLN TK_PRINT TK_SCAN
+
 %token TK_FORBIDDEN
 
 %start S
@@ -97,33 +99,7 @@ EXPRESSION          : CAST { $$ = $1; }
                     | TYPES { $$ = $1; }
                     | BITWISE {$$ = $1;}
                     | '(' EXPRESSION ')' { $$ = $2; }
-                    | TK_ASSERT_EQUALS EXPRESSION EXPRESSION { // ADICIONRA LABEL DE GOTO AQUI!!!
-                        string translate = $2.translation + $3.translation;
-
-                        string ifTempLabel = gentempcode();
-
-                        createVariableIfNotExists(ifTempLabel, ifTempLabel, BOOLEAN_ID, "", false, true, true);
-
-                        translate += "\n/* Assert Line " + to_string(getCurrentLine()) + " */\n";
-                        translate += ifTempLabel + " = " + $2.label + " == " + $3.label + ";\n\n";
-
-                        translate += "if (!" + ifTempLabel + ") {\n";
-                        translate += indent("cout << \"\\033[4;31m"
-                                "The test in line " + to_string(getCurrentLine()) + " failed... "
-                                "Cannot assert \" + " +
-                                "to_string(" +
-                                $2.label +
-                                ") + \" is equals to \" + "
-                                "to_string(" +
-                                $3.label +
-                                ") + \""
-                                "\\033[0m\" << endl;"
-                                "\nexit(1);"
-                                "\n");
-                        translate += "}\n\n";
-
-                        $$.translation = translate;
-                    }
+                    | FUNCTIONS { $$ = $1; }
                     | ID {
                         bool found = false;
                         Variavel* var = findVariableByName($1.label, found);
@@ -313,6 +289,44 @@ CAST                : TK_AS EXPRESSION {
                         translation += $$.label + " = " + $2.label + ";\n";
 
                         $$.translation = $2.translation + translation;
+                    }
+
+/**
+ * Functions
+ */
+
+FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
+                        $$.translation = $3.translation + "cout << " + $3.label + " << endl;\n";
+                    }
+                    | TK_PRINT '(' EXPRESSION ')' {
+                            $$.translation = $3.translation + "cout << " + $3.label + ";\n";
+                    }
+                    | TK_ASSERT_EQUALS EXPRESSION EXPRESSION { // ADICIONRA LABEL DE GOTO AQUI!!!
+                        string translate = $2.translation + $3.translation;
+
+                        string ifTempLabel = gentempcode();
+
+                        createVariableIfNotExists(ifTempLabel, ifTempLabel, BOOLEAN_ID, "", false, true, true);
+
+                        translate += "\n/* Assert Line " + to_string(getCurrentLine()) + " */\n";
+                        translate += ifTempLabel + " = " + $2.label + " == " + $3.label + ";\n\n";
+
+                        translate += "if (!" + ifTempLabel + ") {\n";
+                        translate += indent("cout << \"\\033[4;31m"
+                                "The test in line " + to_string(getCurrentLine()) + " failed... "
+                                "Cannot assert \" + " +
+                                "to_string(" +
+                                $2.label +
+                                ") + \" is equals to \" + "
+                                "to_string(" +
+                                $3.label +
+                                ") + \""
+                                "\\033[0m\" << endl;"
+                                "\nexit(1);"
+                                "\n");
+                        translate += "}\n\n";
+
+                        $$.translation = translate;
                     }
 
 /**

@@ -45,6 +45,8 @@ RESERVED_KEYS "int"
 {RESERVED_KEYS}     { yylval.label = yytext; return TK_FORBIDDEN;   }
 
 "assert"            { return TK_ASSERT_EQUALS;                      }
+"println"           { return TK_PRINTLN;                            }
+"print"             { return TK_PRINT;                              }
 
 "if"                { return TK_IF;                                 }
 "else"              { return TK_ELSE;                               }

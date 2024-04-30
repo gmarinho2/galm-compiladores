@@ -1,7 +1,0 @@
-let a = 1
-let b = a + 1
-
-let c
-c = 1
-
-const t1 = 1, t2: number = 5
