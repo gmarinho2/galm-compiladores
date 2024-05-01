@@ -16,7 +16,7 @@ int yylex(void);
 
 %token TK_BREAK_LINE TK_ASSERT_EQUALS
 
-%token TK_ID TK_INTEGER TK_REAL TK_CHAR TK_STRING TK_AS
+%token TK_ID TK_INTEGER TK_INTEGER_BASE TK_REAL TK_CHAR TK_STRING TK_AS
 
 %token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
 
@@ -251,6 +251,13 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                     }
                     | TK_INTEGER_BASE {
                         string label = $1.label;
+
+                        bool negative = startsWith(label, "-");
+                        
+                        if (negative) {
+                            label = label.substr(1, label.length() - 1);
+                        }
+
                         int base;
 
                         if (startsWith(label, "0b")) {
@@ -283,6 +290,10 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                         }
 
                         int decimal = stoi(label.substr(2, label.length() - 2), nullptr, base);
+
+                        if (negative) {
+                            decimal = -decimal;
+                        }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
