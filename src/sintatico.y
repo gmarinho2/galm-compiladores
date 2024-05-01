@@ -122,8 +122,7 @@ EXPRESSION          : CAST { $$ = $1; }
                         
                         createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        $$.translation = $$.label + " = " + realName + ";// eita\n";
-
+                        $$.translation = $$.label + " = " + realName + ";\n";
                     }
 
 /**
@@ -577,7 +576,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
 
  RELATIONAL         : EXPRESSION TK_GREATER EXPRESSION {
                         if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator > must be used with a number type");
+                            yyerror("The operator > must be used with a number type", "No match operator");
                             return -1;
                         }
 
@@ -598,7 +597,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_LESS EXPRESSION {
                         if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator < must be used with a number type");
+                            yyerror("The operator < must be used with a number type", "No match operator");
                             return -1;
                         }
 
@@ -619,7 +618,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_GREATER_EQUALS EXPRESSION {
                         if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator >= must be used with a number type");
+                            yyerror("The operator >= must be used with a number type", "No match operator");
                             return -1;
                         }
 
@@ -640,7 +639,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_LESS_EQUALS EXPRESSION {
                         if($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
-                            yyerror("The operator <= must be used with a number type");
+                            yyerror("The operator <= must be used with a number type", "No match operator");
                             return -1;
                         }
 
@@ -673,6 +672,11 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     }
                     |
                     EXPRESSION TK_EQUALS EXPRESSION {
+                        if ($1.type != $3.type && (!isInterpretedAsNumeric($1.type) || !isInterpretedAsNumeric($3.type))) {
+                            yyerror("The operator == must be used with the same type", "No match operator");
+                            return -1;
+                        }
+
                         $$.type = BOOLEAN_ID;
                         $$.label = gentempcode();
 
