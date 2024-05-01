@@ -268,4 +268,8 @@ namespace variaveis {
         return atributo.label;
     }
 
+    bool isInterpretedAsNumeric(string type) {
+        return type == NUMBER_ID || type == CHAR_ID || type == BOOLEAN_ID;
+    }
+
 };
