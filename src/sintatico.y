@@ -249,6 +249,49 @@ ASSIGNMENT          : ID '=' EXPRESSION {
                         createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, true, true, true);
                         $$.translation = $$.label + " = " + $1.label + ";\n";
                     }
+                    | TK_INTEGER_BASE {
+                        string label = $1.label;
+                        int base;
+
+                        if (startsWith(label, "0b")) {
+                            for (int i = 2; i < label.length(); i++) {
+                                if (label[i] < '0' || label[i]  > '1') {
+                                    yyerror("Invalid binary number, expecting only 0 and 1 and received " + string(1, label[i]), "Lexical error");
+                                }
+                            }
+
+                            base = 2;
+                        } else if (startsWith(label, "0o")) {
+                            for (int i = 2; i < label.length(); i++) {
+                                if (label[i] < '0' || label[i]  > '7') {
+                                    yyerror("Invalid octal number, expecting only 0-7 and received " + string(1, label[i]), "Lexical error");
+                                }
+                            }
+
+                            base = 8;
+                        } else if (startsWith(label, "0x")) {
+                            for (int i = 2; i < label.length(); i++) {
+                                if ((label[i] < '0' || label[i]  > '9') && (label[i] < 'A' || label[i] > 'F')) {
+                                    yyerror("Invalid hexadecimal number, expecting only 0-9 and A-F and received " + string(1, label[i]), "Lexical error");
+                                }
+                            }
+
+                            base = 16;
+                        } else {
+                            yyerror("Invalid base for integer number, expecting token starting with 0x for hexadecimal, 0b for binary or 0o for octal", 
+                                "Lexical base convertion error");
+                        }
+
+                        int decimal = stoi(label.substr(2, label.length() - 2), nullptr, base);
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        $$.details = INTEGER_NUMBER_ID;
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, to_string(decimal), false, true, true);
+
+                        $$.translation = $$.label + " = " + to_string(decimal) + ";\n";
+                    }
                     | TK_INTEGER  { 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;

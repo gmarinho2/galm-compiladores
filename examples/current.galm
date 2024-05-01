@@ -1,8 +1,1 @@
-let a = 1;
-let b = 2;
-
-let c = a + b;
-
-println(a);
-print(b);
-println(c);
+1 + 1

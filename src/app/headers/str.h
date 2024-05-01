@@ -30,7 +30,7 @@ namespace str {
     }
 
     int countSubstring(const std::string& str, const std::string& sub) {
-        if (sub.length() == 0) return 0;
+        if (sub.length() == 0 || str.length() < sub.length()) return 0;
 
         int count = 0;
         
@@ -39,5 +39,19 @@ namespace str {
         }
         
         return count;
+    }
+
+    /**
+     * Starts with ignores case.
+    */
+
+    bool startsWith(const std::string &str, const std::string &start) {
+        if (str.length() < start.length()) return false;
+
+        for (int i = 0; i < start.length(); i++) {
+            if (tolower(str[i]) != tolower(start[i])) return false;
+        }
+
+        return true;
     }
 }
