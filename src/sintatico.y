@@ -24,7 +24,9 @@ int yylex(void);
 
 %token TK_AND TK_OR TK_BOOLEAN TK_NOT
 
-%token TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS TK_DIV
+%token TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
+
+%token TK_DIV TK_POW
 
 %token TK_BITAND TK_BITOR TK_BITXOR TK_BITLEFT TK_BITRIGHT TK_BITNOT
 
@@ -42,6 +44,7 @@ int yylex(void);
 %left TK_AND TK_OR
 %left '+' '-'
 %left '*' '/' TK_DIV '%'
+%right TK_POW
 %left TK_BITAND TK_BITOR TK_BITLEFT TK_BITRIGHT TK_BITXOR
 %left TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 %left TK_NOT TK_BITNOT
@@ -542,6 +545,19 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         translation += $$.label + " = " + absolute + ";\n";
 
                         $$.translation = $1.translation + translation;
+                    }
+                    |
+                    EXPRESSION TK_POW EXPRESSION {
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator ^ must be used with a number type");
+                            return -1;
+                        }
+
+                        string translation = $1.translation + $3.translation;
+
+                        translation += $$.label + " = pow(" + $1.label + ", " + $3.label + ");\n";
+
+                        $$.translation = translation;
                     }
                     | '|' EXPRESSION '|' {
                         if ($2.type != NUMBER_ID) {

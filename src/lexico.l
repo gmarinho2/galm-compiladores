@@ -64,6 +64,7 @@ RESERVED_KEYS "int"
 "<"                  { return TK_LESS;                                 }
 
 "//"                 { return TK_DIV;                                  }
+"**"                 { return TK_POW;                                  }
 [+\-*/|]             { return *yytext;                                 }
 [(){}[\]]            { return *yytext;                                 }
 [;,~:=%]             { return *yytext;                                 }
