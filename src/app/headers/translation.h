@@ -30,9 +30,9 @@ namespace translation {
             }
     };
 
-    void translate(Atributo &arg1, string &translation, string toType, string toDetails = "") {
+    string translate(const Atributo &arg1, string &translation, string toType, string toDetails = "") {
         if (arg1.type == toType && arg1.details == toDetails) {
-            return;
+            return arg1.label;
         }
         
         string temp = gentempcode();
@@ -43,6 +43,8 @@ namespace translation {
                 translation += temp + " = " + arg1.label + " != 0;\n";
             } else if (toType == CHAR_ID) {
                 translation += temp + " = (char) " + arg1.label + ";\n";
+            } else if (toType == STRING_ID) {
+                translation += temp + " = to_string(" + arg1.label + ");\n";
             } else if (!empty(toDetails)) {
                 if (toDetails == REAL_NUMBER_ID) {
                     translation += temp + " = (float) " + arg1.label + ";\n";
@@ -55,6 +57,8 @@ namespace translation {
         } else if (arg1.type == CHAR_ID) {
             if (toType == NUMBER_ID) {
                 translation += temp + " = (int) " + arg1.label + ";\n";
+            } else if (toType == STRING_ID) {
+                translation += temp + " = string(1, " + arg1.label + ");\n";
             } else if (toType == BOOLEAN_ID) {
                 translation += temp + " = " + arg1.label + " != 0;\n";
             } else {
@@ -63,6 +67,8 @@ namespace translation {
         } else if (arg1.type == BOOLEAN_ID) {
             if (toType == NUMBER_ID) {
                 translation += temp + " = " + arg1.label + ";\n";
+            } else if (toType == STRING_ID) {
+                translation += temp + " = " + arg1.label + " ? \"true\" : \"false\";\n"; // NÃO PODE
             } else {
                 yyerror("Cannot convert boolean to " + toType, "Type check error");
             }
@@ -70,7 +76,7 @@ namespace translation {
             yyerror("Cannot convert " + arg1.type + " to " + toType, "Type check error");
         }
 
-        arg1.label = temp;
+        return temp;
     }
 
 }
