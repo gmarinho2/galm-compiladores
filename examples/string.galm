@@ -1,0 +1,14 @@
+let str = "Hello"
+let stringInterpol = "${str} world!"
+
+let boolean = true
+let numb = 1
+let character = 'c'
+
+let superInterpol = "${boolean} ${numb} ${character}"
+let concat = boolean <> " " <> numb <> " " <> character
+
+assert str "Hello"
+assert stringInterpol "Hello world!"
+assert superInterpol "true 1 c"
+assert concat "true 1 c"

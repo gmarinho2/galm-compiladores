@@ -14,7 +14,7 @@ OTHER_BASE_INTEGER [-]?0{LETTER}({DIGIT}|{LETTER})+
 DECIMAL_INTEGER [-]?{NUMBER}
 
 CHAR \'({LETTER}|{DIGIT})\'
-STRING \"({LETTER}|{DIGIT})*\"
+STRING \"(\\.|[^"\\])*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 
 TYPES "number"|"bool"|"char"|"string"
@@ -63,6 +63,7 @@ RESERVED_KEYS "int"
 ">"                  { return TK_GREATER;                              }
 "<"                  { return TK_LESS;                                 }
 
+"<>"                 { return TK_CONCAT;                               }
 "//"                 { return TK_DIV;                                  }
 "**"                 { return TK_POW;                                  }
 [+\-*/|]             { return *yytext;                                 }
@@ -74,14 +75,14 @@ RESERVED_KEYS "int"
 {OTHER_TYPES}        { yylval.label = yytext; return TK_TYPE;          }
  
 "as"                 { return TK_AS;                                   }
-{STRING}		         { yylval.label = yytext; return TK_STRING;        }
-{CHAR}		           { yylval.label = yytext; return TK_CHAR;          }
+{STRING}		     { yylval.label = yytext; return TK_STRING;        }
+{CHAR}		         { yylval.label = yytext; return TK_CHAR;          }
 
 {OTHER_BASE_INTEGER} { yylval.label = yytext; return TK_INTEGER_BASE;  }
 {DECIMAL_INTEGER}    { yylval.label = yytext; return TK_INTEGER;       }
 
 {REAL}	             { yylval.label = yytext; return TK_REAL;          }
-{ID}		             { yylval.label = yytext; return TK_ID;            }   
+{ID}		         { yylval.label = yytext; return TK_ID;            }   
 
 .                    { *yytext;                                        }
 
