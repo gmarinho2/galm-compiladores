@@ -7,9 +7,14 @@ let div = 1.0 + 2.0 / 2.0 - 1.0
 assert div 1.0
 
 let exp = (1.0 + 1.0) * 2.0
+let exponential = 1.0 * 2.0 ** 2.0 * 4.0
 
 let multiDiv = 2.0 * 2.0 / 4.0
 let divMulti = -2.0 / 2.0 * 4.0
 
 let mod = 3 % 2
 let modMultiDiv = 2 % 2 / 2 
+
+assert mod 1
+assert modMultiDiv 0
+assert exponential 16
