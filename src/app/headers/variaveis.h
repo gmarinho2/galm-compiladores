@@ -172,7 +172,7 @@ namespace variaveis {
     string gerarCodigo(string codigo) {
         int assertCount = countSubstring(codigo, "assert");
 
-        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n\n";
+        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n\n";
 
         compilador += "#define bool int\n";
         compilador += "#define true 1\n";
