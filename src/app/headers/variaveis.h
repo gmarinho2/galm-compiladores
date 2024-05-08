@@ -10,6 +10,7 @@ using namespace str;
 namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
+    unsigned long long int labelCounter = 0;
 
     unsigned long long int currentLine = 1;
 
@@ -167,6 +168,10 @@ namespace variaveis {
             tempCodeCounter++;
             return "t" + to_string(tempCodeCounter);
         }
+    }
+    string genlabelcode() {
+        return "label_" + to_string(++labelCounter);
+
     }
 
     string gerarCodigo(string codigo) {
