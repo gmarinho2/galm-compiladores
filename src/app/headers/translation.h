@@ -44,7 +44,8 @@ namespace translation {
             } else if (toType == CHAR_ID) {
                 translation += temp + " = (char) " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-                translation += temp + " = to_string(" + arg1.label + ");\n";
+                translation += "strcpy(" + temp + ", intToString(" + arg1.label + "));\n";
+                createString(temp, translation, "strLen(" + temp + ")");
             } else if (!empty(toDetails)) {
                 if (toDetails == REAL_NUMBER_ID) {
                     translation += temp + " = (float) " + arg1.label + ";\n";
@@ -58,7 +59,9 @@ namespace translation {
             if (toType == NUMBER_ID) {
                 translation += temp + " = (int) " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-                translation += temp + " = string(1, " + arg1.label + ");\n";
+                createString(temp, translation, "1");
+                translation += temp + " = (char*) malloc(1);\n";
+                translation += temp + "[0] = " + arg1.label + ";\n";
             } else if (toType == BOOLEAN_ID) {
                 translation += temp + " = " + arg1.label + " != 0;\n";
             } else {
@@ -68,7 +71,11 @@ namespace translation {
             if (toType == NUMBER_ID) {
                 translation += temp + " = " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-                translation += temp + " = " + arg1.label + " ? \"true\" : \"false\";\n"; // NÃO PODE
+
+                translation += "int size_b = " + arg1.label + " ? 4 : 5;\n";
+
+                createString(temp, translation, "size_b");
+                translation += "strcpy(" + temp + ", " + arg1.label + " ? \"true\" : \"false\");\n"; // NÃO PODE, TA COM MAIS DE 3 ENDEREÇOS
             } else {
                 yyerror("Cannot convert boolean to " + toType, "Type check error");
             }

@@ -22,68 +22,88 @@ OTHER_TYPES "void"|"null"
 
 RESERVED_KEYS "int"
 
+%option stack
+%s SC_PROGRAM
+%x SC_STRING
+
 %%
 
-{SPACE}+             { /* ignore whitespace */                         }
-"\n"                 { return TK_BREAK_LINE;                           }
-{RESERVED_KEYS}      { yylval.label = yytext; return TK_FORBIDDEN;     }
+{SPACE}+             { /* ignore whitespace */                                }
+"\n"                 { return TK_BREAK_LINE;                                  }
+{RESERVED_KEYS}      { yylval.label = yytext; return TK_FORBIDDEN;            }
 
-"assert"             { return TK_ASSERT_EQUALS;                        }
-"println"            { return TK_PRINTLN;                              }
-"print"              { return TK_PRINT;                                }
+"assertEquals"       { return TK_ASSERT_EQUALS;                               }
+"println"            { return TK_PRINTLN;                                     }
+"print"              { return TK_PRINT;                                       }
 
-"if"                 { return TK_IF;                                   }
-"else"               { return TK_ELSE;                                 }
-"repeat"             { return TK_REPEAT;                               }
-"until"              { return TK_UNTIL;                                }
-"for"                { return TK_FOR;                                  }
+"if"                 { return TK_IF;                                          }
+"else"               { return TK_ELSE;                                        }
+"repeat"             { return TK_REPEAT;                                      }
+"until"              { return TK_UNTIL;                                       }
+"for"                { return TK_FOR;                                         }
 
-"fn"                 { return TK_FUNCTION;                             }
-"let"                { return TK_LET;                                  }
-"const"              { return TK_CONST;                                }
-        
-"true"               { yylval.label = "true"; return TK_BOOLEAN;       }
-"false"              { yylval.label = "false"; return TK_BOOLEAN;      }
+"length"             { return TK_LENGTH;                                      }
 
-"and"                { return TK_AND;                                  }
-"or"                 { return TK_OR;                                   }
-"!"|"not"            { return TK_NOT;                                  }
+"fn"                 { return TK_FUNCTION;                                    }
+"let"                { return TK_LET;                                         }
+"const"              { return TK_CONST;                                       }
+     
+"true"               { yylval.label = "true"; return TK_BOOLEAN;              }
+"false"              { yylval.label = "false"; return TK_BOOLEAN;             }
 
-"&"                  { return TK_BITAND;                               }
-"|"                  { return TK_BITOR;                                }
-"~"                  { return TK_BITNOT;                               }
-"^"                  { return TK_BITXOR;                               }
-"<<"                 { return TK_BITLEFT;                              }
-">>"                 { return TK_BITRIGHT;                             }
+"and"                { return TK_AND;                                         }
+"or"                 { return TK_OR;                                          }
+"!"|"not"            { return TK_NOT;                                         }
 
-"=="                 { return TK_EQUALS;                               }
-"!="                 { return TK_DIFFERENT;                            }
-">="                 { return TK_GREATER_EQUALS;                       }
-"<="                 { return TK_LESS_EQUALS;                          }
-">"                  { return TK_GREATER;                              }
-"<"                  { return TK_LESS;                                 }
+"&"                  { return TK_BITAND;                                      }
+"|"                  { return TK_BITOR;                                       }
+"~"                  { return TK_BITNOT;                                      }
+"^"                  { return TK_BITXOR;                                      }
+"<<"                 { return TK_BITLEFT;                                     }
+">>"                 { return TK_BITRIGHT;                                    }
 
-"<>"                 { return TK_CONCAT;                               }
-"//"                 { return TK_DIV;                                  }
-"**"                 { return TK_POW;                                  }
-[+\-*/|]             { return *yytext;                                 }
-[(){}[\]]            { return *yytext;                                 }
-[;,~:=%]             { return *yytext;                                 }
+"=="                 { return TK_EQUALS;                                      }
+"!="                 { return TK_DIFFERENT;                                   }
+">="                 { return TK_GREATER_EQUALS;                              }
+"<="                 { return TK_LESS_EQUALS;                                 }
+">"                  { return TK_GREATER;                                     }
+"<"                  { return TK_LESS;                                        }
 
-("("{TYPES}")")*     { yylval.label = yytext; return TK_AS;            }
-{TYPES}("[]")*       { yylval.label = yytext; return TK_TYPE;          }
-{OTHER_TYPES}        { yylval.label = yytext; return TK_TYPE;          }
+"."                  { return '.';                                            }
+
+[`]                  { yy_push_state(SC_STRING);    return '`';               }
+<SC_STRING>[`]       { yy_pop_state();              return '`';               }
+<*>"${"              { yy_push_state(SC_PROGRAM);   return TK_INTER_START;    }
+<INITIAL>"}$"        { return TK_INTER_END;                                   }
+<*>"}$"              { yy_pop_state();              return TK_INTER_END;      } 
+
+<SC_STRING>{ 
+  [^\\]             { yylval.label = strdup(yytext);        return TK_INTER_STRING; }
  
-"as"                 { return TK_AS;                                   }
-{STRING}		     { yylval.label = yytext; return TK_STRING;        }
-{CHAR}		         { yylval.label = yytext; return TK_CHAR;          }
+  \\.                { yylval.label = strdup(yytext);        return TK_INTER_STRING; }
+}
 
-{OTHER_BASE_INTEGER} { yylval.label = yytext; return TK_INTEGER_BASE;  }
-{DECIMAL_INTEGER}    { yylval.label = yytext; return TK_INTEGER;       }
+"<>"                 { return TK_CONCAT;                                      }
+"//"                 { return TK_DIV;                                         }
+"**"                 { return TK_POW;                                         }
+[+\-*/|\"]           { return *yytext;                                        }
+[(){}[\]]            { return *yytext;                                        }
+[;,~:=%]             { return *yytext;                                        }
+ 
+("("{TYPES}")")*     { yylval.label = yytext; return TK_AS;                   }
+{TYPES}("[]")*       { yylval.label = toId(yytext); return TK_TYPE;           }
+{OTHER_TYPES}        { yylval.label = yytext; return TK_TYPE;                 }
+   
+"as"                 { return TK_AS;                                          }
+{STRING}             { yylval.label = yytext; return TK_STRING;               }
+{CHAR}		           { yylval.label = yytext; return TK_CHAR;                 }
+  
+{OTHER_BASE_INTEGER} { yylval.label = yytext; return TK_INTEGER_BASE;         }
+{DECIMAL_INTEGER}    { yylval.label = yytext; return TK_INTEGER;              }
+   
+{REAL}	             { yylval.label = yytext; return TK_REAL;                 }
+{ID}		             { yylval.label = yytext; return TK_ID;                   }   
 
-{REAL}	             { yylval.label = yytext; return TK_REAL;          }
-{ID}		         { yylval.label = yytext; return TK_ID;            }   
-
-.                    { *yytext;                                        }
+.                    { *yytext;                                               }
 
 %%

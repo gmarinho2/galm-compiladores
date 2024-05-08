@@ -3,7 +3,7 @@ let octal = 0o144
 let hex = 0x64
 let binary = 0b1100100
 
-assert decimal 100
-assert octal 100
-assert hex 100
-assert binary 100
+assertEquals(decimal, 100)
+assertEquals(octal, 100)
+assertEquals(hex, 100)
+assertEquals(binary, 100)

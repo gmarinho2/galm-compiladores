@@ -8,7 +8,17 @@ let character = 'c'
 let superInterpol = "${boolean} ${numb} ${character}"
 let concat = boolean <> " " <> numb <> " " <> character
 
-assert str "Hello"
-assert stringInterpol "Hello world!"
-assert superInterpol "true 1 c"
-assert concat "true 1 c"
+
+let str8 = "123" <> "asokdoasd" <> "stephen curry"
+
+let variavelManeira
+
+variavelManeira = "asdokaoskd"
+
+assertEquals(variavelManeira.length, 10)
+assertEquals(str8.length, 25)
+
+assertEquals(str, "Hello")
+assertEquals(stringInterpol, "Hello world!")
+assertEquals(superInterpol, "true 1 c")
+assertEquals(concat, "true 1 c")

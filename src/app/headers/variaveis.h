@@ -1,10 +1,13 @@
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <vector>
+
 #include "str.h"
+#include "file.h"
 
 using namespace std;
 using namespace str;
+using namespace file;
 
 #pragma once
 namespace variaveis {
@@ -32,9 +35,11 @@ namespace variaveis {
 
     const string NUMBER_ID = "number";
     const string BOOLEAN_ID = "bool";
-    const string STRING_ID = "string";
+    const string STRING_ID = "char*";
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
+
+    const string STRING_SIZE_STR = "_len";
 
     bool isVoid(string voidString) {
         return voidString == VOID_ID || voidString == "void*";
@@ -113,7 +118,7 @@ namespace variaveis {
                     return "void*";
                 }
 
-                if (this->temp) {
+                if (this->temp || endsWith(this->varName, STRING_SIZE_STR)) {
                     if (this->varType == NUMBER_ID) {
                         return real ? "float" : "int";
                     }
@@ -160,25 +165,51 @@ namespace variaveis {
 
     string gentempcode(bool isVar = false) {
         if(isVar) {
-            varCodeCounter++;
-            return "var" + to_string(varCodeCounter);
+            return "var" + to_string(++varCodeCounter);
         }
-        else {
-            tempCodeCounter++;
-            return "t" + to_string(tempCodeCounter);
-        }
+
+        return "t" + to_string(++tempCodeCounter);
     }
 
+    vector<string> utilitiesFunctionsFiles;
+
+
     string gerarCodigo(string codigo) {
+        utilitiesFunctionsFiles.push_back("intToString");
+        utilitiesFunctionsFiles.push_back("strCopy");
+        utilitiesFunctionsFiles.push_back("stringConcat");
+        utilitiesFunctionsFiles.push_back("strLen");
         int assertCount = countSubstring(codigo, "assert");
 
-        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n\n";
+        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n#include <string.h>\n\n";
 
         compilador += "#define bool int\n";
         compilador += "#define true 1\n";
         compilador += "#define false 0\n\n";
 
         compilador += "using namespace std;\n\n";
+
+        string protoTypes = "";
+        string protoTypesImpl = "";
+
+        bool success = false;
+
+        for (int i = 0; i < utilitiesFunctionsFiles.size(); i++) {
+            string file = readFileAsString("src/app/utility/" + utilitiesFunctionsFiles[i] + ".c", success);
+
+            if (!success) {
+                cout << "Ocorreu um erro ao tentar abrir o arquivo de funções utilitárias" << endl;
+                cout << "Não foi possível carregar o arquivo " << utilitiesFunctionsFiles[i] << endl;
+                exit(1);
+            }
+
+            string protoType = split(file, " {")[0];
+
+            protoTypes += protoType + ";\n";
+            protoTypesImpl += file + "\n";
+        }
+
+        compilador += protoTypes + "\n";
 
         compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
 
@@ -209,7 +240,9 @@ namespace variaveis {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
-        compilador += "\treturn 0;\n}";
+        compilador += "\treturn 0;\n}\n\n";
+
+        compilador += protoTypesImpl;
 
         return compilador;
     }
@@ -247,29 +280,22 @@ namespace variaveis {
         return NULL_VAR;
     }
 
-    // REFAZER USANDO A FUNÇÃO DE CIMA
-    string getAsBoolean(Atributo atributo) {
-        if (atributo.type == BOOLEAN_ID)
-            return atributo.label;
+    
+    void createString(string strLabel, string &translation, string sizeStr = "") {
+        string sizeOfString = strLabel + STRING_SIZE_STR;
+        createVariableIfNotExists(sizeOfString, sizeOfString, NUMBER_ID, sizeStr, false, true, true);
 
-        if (atributo.type == NUMBER_ID) {
-            return atributo.label + " != 0";
-        }
-
-        if (atributo.type == STRING_ID) {
-            return atributo.label + ".length() > 0";
-        }
-
-        if (atributo.type == CHAR_ID) {
-            return atributo.label + " != '\\0'";
-        }
-        
-        yyerror("Cannot convert " + atributo.type + " of symbol \"" + atributo.label + "\" to boolean");
-        return atributo.label;
+        translation += sizeOfString + " = " + sizeStr+ ";\n";
     }
 
     bool isInterpretedAsNumeric(string type) {
         return type == NUMBER_ID || type == CHAR_ID || type == BOOLEAN_ID;
+    }
+
+    string toId(string typeId) {
+        if (typeId == "string") return "char*";
+
+        return typeId;
     }
 
 };
