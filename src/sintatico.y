@@ -52,6 +52,9 @@ int yylex(void);
 %left TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 %left TK_NOT TK_BITNOT
 
+%nonassoc THEN
+%nonassoc TK_ELSE
+
 %%
 
 /**
@@ -68,10 +71,10 @@ S                   : COMMANDS {
  */
 
 COMMANDS            : COMMAND COMMANDS { $$.translation = $1.translation + $2.translation; }
-                    | '{' COMMANDS '}' COMMANDS {  $$.translation = "\n{\n" + indent($2.translation) + "}\n\n" + $4.translation; }
                     | { $$.translation = ""; }
 
-COMMAND             : VARIABLE_DECLARATION { $$ = $1; }
+COMMAND             : '{' COMMANDS '}' { $$.translation = $2.translation; }
+                    | VARIABLE_DECLARATION { $$ = $1; }
                     | EXPRESSION { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
                     | CONTROL { $$ = $1;}
@@ -394,7 +397,7 @@ CAST                : TK_AS EXPRESSION {
  * Conditionals
  */
 
-CONDITIONALS        : TK_IF '(' EXPRESSION ')' COMMAND {
+CONDITIONALS        : TK_IF '(' EXPRESSION ')' COMMAND %prec THEN {
                         if($3.type != BOOLEAN_ID) yyerror("Must be a boolean");
 
                         string temp = gentempcode();                       
@@ -405,14 +408,13 @@ CONDITIONALS        : TK_IF '(' EXPRESSION ')' COMMAND {
                         string translation = $3.translation;
 
                         translation += temp + " = !(" + $3.label + "); \n";
-                        translation += "if(" + temp + ") goto " + ifLabel + ";\n";
+                        translation += "if (" + temp + ") goto " + ifLabel + ";\n";
                         translation += $5.translation;
                         translation += ifLabel + ": \n";
 
                         $$.translation = translation;
                     }
-                    | TK_IF '(' EXPRESSION ')' COMMAND TK_ELSE COMMAND
-                    {
+                    | TK_IF '(' EXPRESSION ')' COMMAND TK_ELSE COMMAND {
                         if($3.type != BOOLEAN_ID) yyerror("Must be a boolean");
 
                         string temp = gentempcode();
@@ -427,25 +429,8 @@ CONDITIONALS        : TK_IF '(' EXPRESSION ')' COMMAND {
                         translation += "if(" + temp + ") goto " + elseLabel + ";\n";
                         translation += $5.translation;
                         translation += "goto " + ifLabel + ";\n";
-                        translation += elseLabel + ": \n";
+                        translation += elseLabel + ": //\n";
                         translation += $7.translation;
-                        translation += ifLabel;
-
-                        $$.translation = translation;
-                    }
-                    | TK_IF '(' EXPRESSION ')' '{' COMMANDS '}' {
-                        if($3.type != BOOLEAN_ID) yyerror("Must be a boolean");
-
-                        string temp = gentempcode();                       
-                        string ifLabel = genlabelcode();
-
-                        createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
-
-                        string translation = $3.translation;
-
-                        translation += temp + " = !(" + $3.label + "); \n";
-                        translation += "if(" + temp + ") goto " + ifLabel + ";\n";
-                        translation += $6.translation;
                         translation += ifLabel + ": \n";
 
                         $$.translation = translation;
@@ -996,13 +981,14 @@ CONTROL             : TK_WHILE '(' EXPRESSION ')' COMMAND {
 
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
 
-                        string translation = $3.translation;
+                        string translation;
 
-                        translation += temp + " = !(" + $3.label + "); \n";
-                        translation += "while(" + temp + ") goto " + fimWhileLabel + ";\n";
                         translation += inicioWhileLabel + ": \n";
+                        translation += $3.translation;
+                        translation += temp + " = !(" + $3.label + "); \n";
+                        translation += "if (" + temp + ") goto " + fimWhileLabel + ";\n";
                         translation += $5.translation;
-                        translation += "goto" + inicioWhileLabel + ";\n";
+                        translation += "goto " + inicioWhileLabel + ";\n";
                         translation += fimWhileLabel + ": \n";
 
                         $$.translation = translation;
@@ -1017,14 +1003,15 @@ CONTROL             : TK_WHILE '(' EXPRESSION ')' COMMAND {
 
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
 
-                        string translation = $5.translation;
+                        string translation;
 
-                        translation += temp + " = !(" + $5.label + "); \n";
                         translation += $2.translation;
-                        translation += "while(" + temp + ") goto " + fimWhileLabel + ";\n";
                         translation += inicioWhileLabel + ": \n";
                         translation += $5.translation;
-                        translation += "goto" + inicioWhileLabel + ";\n";
+                        translation += temp + " = !(" + $5.label + "); \n";
+                        translation += "if (" + temp + ") goto " + fimWhileLabel + ";\n";
+                        translation += $2.translation;
+                        translation += "goto " + inicioWhileLabel + ";\n";
                         translation += fimWhileLabel + ": \n";
 
                         $$.translation = translation;

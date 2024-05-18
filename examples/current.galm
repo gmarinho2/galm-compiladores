@@ -1,2 +1,7 @@
-let a = true
-do 1 while (a == true)
+let a = 10
+
+if (a <= 10) {
+    println(a)
+} else {
+    println(false)
+}
