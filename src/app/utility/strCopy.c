@@ -5,6 +5,5 @@ char* strCopy(char *str, int size) {
         dest[i] = str[i];
         
     dest[size] = '\0';
-    
     return dest;
 }

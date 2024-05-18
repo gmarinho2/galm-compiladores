@@ -44,8 +44,19 @@ namespace translation {
             } else if (toType == CHAR_ID) {
                 translation += temp + " = (char) " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-                translation += "strcpy(" + temp + ", intToString(" + arg1.label + "));\n";
-                createString(temp, translation, "strLen(" + temp + ")");
+                string newLabel = gentempcode();
+                createVariableIfNotExists(newLabel, newLabel, STRING_ID, newLabel, false, true, true);
+
+                if (arg1.details == INTEGER_NUMBER_ID) { 
+                    translation += newLabel + " = intToString(" + arg1.label + ");\n";
+                } else {
+                    translation += newLabel + " = realToString(" + arg1.label + ");\n";
+                }
+                
+                createString(newLabel, translation, "strLen(" + newLabel + ")");
+
+                translation += temp + " = strCopy(" + newLabel + ", strLen(" + newLabel + "));\n";
+                createString(temp, translation, newLabel + STRING_SIZE_STR);
             } else if (!empty(toDetails)) {
                 if (toDetails == REAL_NUMBER_ID) {
                     translation += temp + " = (float) " + arg1.label + ";\n";
@@ -71,11 +82,10 @@ namespace translation {
             if (toType == NUMBER_ID) {
                 translation += temp + " = " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-
                 translation += "int size_b = " + arg1.label + " ? 4 : 5;\n";
 
                 createString(temp, translation, "size_b");
-                translation += "strcpy(" + temp + ", " + arg1.label + " ? \"true\" : \"false\");\n"; // NÃO PODE, TA COM MAIS DE 3 ENDEREÇOS
+                translation += "strcpy(" + temp + ", " + arg1.label + " ? \"true\" : \"false\");\n"; //TODO NÃO PODE, TA COM MAIS DE 3 ENDEREÇOS
             } else {
                 yyerror("Cannot convert boolean to " + toType, "Type check error");
             }

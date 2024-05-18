@@ -43,6 +43,7 @@ int yylex(void);
 %left TK_ASSERT_EQUALS
 
 %left TK_AND TK_OR
+%left TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
 %left '+' '-'
 %left '*' '/' TK_DIV '%'
@@ -51,7 +52,6 @@ int yylex(void);
 
 %left TK_CONCAT
 %left TK_BITAND TK_BITOR TK_BITLEFT TK_BITRIGHT TK_BITXOR
-%left TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 %left TK_NOT TK_BITNOT
 
 %%
@@ -377,7 +377,13 @@ ASSIGNMENT          : ID '=' EXPRESSION {
 
                         createString($$.label, translation, to_string(size));
 
-                        translation += $$.label + " = strCopy(" + value + ", " + to_string(size) + ");\n";
+                        translation += $$.label + " = (char*) malloc(" + to_string(size + 1) + ");\n";
+
+                        for (int i = 0; i < size; i++) {
+                            translation += $$.label + "[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
+                        }
+
+                        translation += $$.label + "[" + to_string(size) + "] = '\\0';\n";
 
                         $$.translation = translation;
                     }
@@ -519,6 +525,7 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
+                        $$.details = INTEGER_NUMBER_ID;
 
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
@@ -895,7 +902,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_DIFFERENT EXPRESSION {
                         if ($1.type != $3.type && (!isInterpretedAsNumeric($1.type) || !isInterpretedAsNumeric($3.type))) {
-                            yyerror("The operator == must be used with the same type", "No match operator");
+                            yyerror("The operator != must be used with the same type", "No match operator");
                             return -1;
                         }
 
@@ -913,7 +920,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_EQUALS EXPRESSION {
                         if ($1.type != $3.type && (!isInterpretedAsNumeric($1.type) || !isInterpretedAsNumeric($3.type))) {
-                            yyerror("The operator == must be used with the same type", "No match operator");
+                            yyerror("The operator == must be used with the same type", "No match operator " + $1.type + " " + $3.type);
                             return -1;
                         }
 
