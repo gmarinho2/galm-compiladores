@@ -29,7 +29,7 @@ RESERVED_KEYS "int"
 %%
 
 {SPACE}+             { /* ignore whitespace */                                }
-"\n"                 { return TK_BREAK_LINE;                                  }
+"\n"                 { addLine();                                             }
 {RESERVED_KEYS}      { yylval.label = yytext; return TK_FORBIDDEN;            }
 
 "assertEquals"       { return TK_ASSERT_EQUALS;                               }
@@ -78,7 +78,7 @@ RESERVED_KEYS "int"
 <*>"}$"              { yy_pop_state();              return TK_INTER_END;      } 
 
 <SC_STRING>{ 
-  [^\\]             { yylval.label = strdup(yytext);        return TK_INTER_STRING; }
+  [^\\]              { yylval.label = strdup(yytext);        return TK_INTER_STRING; }
  
   \\.                { yylval.label = strdup(yytext);        return TK_INTER_STRING; }
 }

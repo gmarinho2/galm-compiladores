@@ -52,7 +52,7 @@ namespace translation {
                 } else {
                     translation += newLabel + " = realToString(" + arg1.label + ");\n";
                 }
-                
+
                 createString(newLabel, translation, "strLen(" + newLabel + ")");
 
                 translation += temp + " = strCopy(" + newLabel + ", strLen(" + newLabel + "));\n";
@@ -82,10 +82,29 @@ namespace translation {
             if (toType == NUMBER_ID) {
                 translation += temp + " = " + arg1.label + ";\n";
             } else if (toType == STRING_ID) {
-                translation += "int size_b = " + arg1.label + " ? 4 : 5;\n";
+                string notArg = gentempcode();
+                createVariableIfNotExists(notArg, notArg, BOOLEAN_ID, notArg, false, true, true);
 
-                createString(temp, translation, "size_b");
-                translation += "strcpy(" + temp + ", " + arg1.label + " ? \"true\" : \"false\");\n"; //TODO NÃO PODE, TA COM MAIS DE 3 ENDEREÇOS
+                translation += notArg + " = !" + arg1.label + ";\n";
+                
+                string stringLength = gentempcode();
+                createVariableIfNotExists(stringLength, stringLength, NUMBER_ID, INTEGER_NUMBER_ID, false, true, true);
+
+                translation += stringLength + " = " + notArg + " + 4;\n";
+
+                string newLabel = gentempcode();
+                createVariableIfNotExists(newLabel, newLabel, STRING_ID, newLabel, false, true, true);
+
+                translation += newLabel + " = (char*) malloc(" + stringLength + ");\n";
+
+                translation += newLabel + "[0] = 'f';\n";
+                translation += newLabel + "[1] = 'a';\n";
+                translation += newLabel + "[2] = 'l';\n";
+                translation += newLabel + "[3] = 's';\n";
+                translation += newLabel + "[4] = 'e';\n";  //TODO
+
+                createString(temp, translation, stringLength);
+                translation += temp + " = strCopy(" + newLabel + ", " + stringLength + ");\n";
             } else {
                 yyerror("Cannot convert boolean to " + toType, "Type check error");
             }

@@ -930,10 +930,18 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         string translation = $1.translation + $3.translation;
 
                         string sLabel = translate($3, translation, $1.type, $1.details);
-
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = translation + $$.label + " = " + $1.label + " == " + sLabel + ";\n";
+                        if ($1.type == STRING_ID) { //TODO
+                            string aux = gentempcode();
+                            createVariableIfNotExists(aux, aux, BOOLEAN_ID, aux, false, true, true);
+
+                            translation += $$.label + " = " + $1.label + STRING_SIZE_STR + " == " + sLabel + STRING_SIZE_STR + ";\n";
+                        } else {
+                            translation += $$.label + " = " + $1.label + " == " + sLabel + ";\n";
+                        }
+
+                        $$.translation = translation;
                     }
 
 /**
