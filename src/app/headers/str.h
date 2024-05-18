@@ -54,4 +54,18 @@ namespace str {
 
         return true;
     }
+
+    /**
+     * Ends with ignores case.
+    */
+
+    bool endsWith(const std::string &str, const std::string &end) {
+        if (str.length() < end.length()) return false;
+
+        for (int i = 0; i < end.length(); i++) {
+            if (tolower(str[str.length() - i - 1]) != tolower(end[end.length() - i - 1])) return false;
+        }
+
+        return true;
+    }
 }

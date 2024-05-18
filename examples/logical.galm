@@ -1,5 +1,5 @@
 let a = 1 and 20
 let b = !1
 
-assert a true
-assert b false
+assertEquals(a, true)
+assertEquals(b, false)

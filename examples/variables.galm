@@ -7,6 +7,9 @@ let t4, t5: number, t7: number = 1
 let a = 1
 let b = a + 1
 
+assertEquals(a, 1)
+assertEquals(b, 2)
+
 let c
 c = 1
 
