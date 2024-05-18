@@ -1,14 +1,24 @@
 let str = "Hello"
-let stringInterpol = "${str} world!"
+let stringInterpol = `${str}$ world!`
 
 let boolean = true
 let numb = 1
 let character = 'c'
 
-let superInterpol = "${boolean} ${numb} ${character}"
+let superInterpol = `${boolean}$ ${numb}$ ${character}$`
 let concat = boolean <> " " <> numb <> " " <> character
 
-assert str "Hello"
-assert stringInterpol "Hello world!"
-assert superInterpol "true 1 c"
-assert concat "true 1 c"
+
+let str8 = "123" <> "asokdoasd" <> "stephen curry"
+
+let variavelManeira
+
+variavelManeira = "asdokaoskd"
+
+assertEquals(variavelManeira.length, 10)
+assertEquals(str8.length, 25)
+
+assertEquals(str.length, "Hello".length)
+assertEquals(stringInterpol.length, "Hello world!".length)
+assertEquals(superInterpol.length, "true 1 c".length)
+assertEquals(concat.length, "true 1 c".length)

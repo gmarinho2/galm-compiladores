@@ -2,6 +2,6 @@ let a = 1
 let b = 2
 let c = a > b
 
-assert a 1
-assert b 2
-assert c false
+assertEquals(a, 1)
+assertEquals(b, 2)
+assertEquals(c, false)
