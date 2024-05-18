@@ -18,7 +18,7 @@ int yylex(void);
 
 %token TK_ID TK_INTEGER TK_INTEGER_BASE TK_REAL TK_CHAR TK_STRING TK_STRING_W_INTER TK_AS
 
-%token TK_IF TK_ELSE TK_FOR TK_REPEAT TK_UNTIL
+%token TK_IF TK_ELSE TK_FOR TK_WHILE TK_DO
 
 %token TK_LET TK_CONST TK_FUNCTION TK_TYPE TK_VOID
 
@@ -74,6 +74,7 @@ COMMANDS            : COMMAND COMMANDS { $$.translation = $1.translation + $2.tr
 COMMAND             : VARIABLE_DECLARATION { $$ = $1; }
                     | EXPRESSION { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
+                    | CONTROL { $$ = $1;}
                     | TK_BREAK_LINE {
                         $$ = $1;
                         addLine();
@@ -986,7 +987,48 @@ BITWISE             : EXPRESSION TK_BITAND EXPRESSION {
 /** Control structures 
  *
  */
+CONTROL             : TK_WHILE '(' EXPRESSION ')' COMMAND {
+                        if($3.type != BOOLEAN_ID) yyerror("Must be a boolean");
 
+                        string temp = gentempcode();                       
+                        string inicioWhileLabel = genlabelcode();
+                        string fimWhileLabel = genlabelcode();
+
+                        createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
+
+                        string translation = $3.translation;
+
+                        translation += temp + " = !(" + $3.label + "); \n";
+                        translation += "while(" + temp + ") goto " + fimWhileLabel + ";\n";
+                        translation += inicioWhileLabel + ": \n";
+                        translation += $5.translation;
+                        translation += "goto" + inicioWhileLabel + ";\n";
+                        translation += fimWhileLabel + ": \n";
+
+                        $$.translation = translation;
+                    }
+                    |
+                    TK_DO COMMAND TK_WHILE '(' EXPRESSION ')'{
+                        if($5.type != BOOLEAN_ID) yyerror("Must be a boolean");
+
+                        string temp = gentempcode();                       
+                        string inicioWhileLabel = genlabelcode();
+                        string fimWhileLabel = genlabelcode();
+
+                        createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
+
+                        string translation = $5.translation;
+
+                        translation += temp + " = !(" + $5.label + "); \n";
+                        translation += $2.translation;
+                        translation += "while(" + temp + ") goto " + fimWhileLabel + ";\n";
+                        translation += inicioWhileLabel + ": \n";
+                        translation += $5.translation;
+                        translation += "goto" + inicioWhileLabel + ";\n";
+                        translation += fimWhileLabel + ": \n";
+
+                        $$.translation = translation;
+                    }
 %%
 
 #include "lexico.yy.c"

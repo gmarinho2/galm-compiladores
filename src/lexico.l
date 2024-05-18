@@ -32,16 +32,15 @@ RESERVED_KEYS "int"
 "println"            { return TK_PRINTLN;                              }
 "print"              { return TK_PRINT;                                }
 
+"do"                 { return TK_DO;                                   }
+"while"              { return TK_WHILE;                                }
 "if"                 { return TK_IF;                                   }
 "else"               { return TK_ELSE;                                 }
-"repeat"             { return TK_REPEAT;                               }
-"until"              { return TK_UNTIL;                                }
 "for"                { return TK_FOR;                                  }
-
 "fn"                 { return TK_FUNCTION;                             }
 "let"                { return TK_LET;                                  }
 "const"              { return TK_CONST;                                }
-        
+
 "true"               { yylval.label = "true"; return TK_BOOLEAN;       }
 "false"              { yylval.label = "false"; return TK_BOOLEAN;      }
 
