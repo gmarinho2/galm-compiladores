@@ -13,6 +13,7 @@ using namespace file;
 namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
+    unsigned long long int labelCounter = 0;
 
     unsigned long long int currentLine = 1;
 
@@ -169,6 +170,10 @@ namespace variaveis {
         }
 
         return "t" + to_string(++tempCodeCounter);
+    }
+    string genlabelcode() {
+        return "label_" + to_string(++labelCounter);
+
     }
 
     vector<string> utilitiesFunctionsFiles;
