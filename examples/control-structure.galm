@@ -1,0 +1,16 @@
+let a = 10
+let b = 0
+let c = 0
+let d = 0
+
+while (a > 0) a = a - 1
+
+do b = b + 1 while (b <= 10)
+
+if (true) c = 10
+if (false) d = 5 else d = 40 
+
+assertEquals(a, 0)
+assertEquals(b, 11)
+assertEquals(c, 10)
+assertEquals(d, 40)

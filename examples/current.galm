@@ -1,7 +1,5 @@
-let a = 10
-
-if (a <= 10) {
-    println(a)
-} else {
-    println(false)
+let i = 1
+let j
+for (;;) {
+    println(i)
 }

@@ -32,10 +32,12 @@ OTHER_TYPES "void"|"null"
 "assertEquals"       { return TK_ASSERT_EQUALS;                                      }
 "println"            { return TK_PRINTLN;                                            }
 "print"              { return TK_PRINT;                                              }
+"length"             { return TK_LENGTH;                                             }
        
 "do"                 { return TK_DO;                                                 }
 "while"              { return TK_WHILE;                                              }
 "for"                { return TK_FOR;                                                }
+"in"                 { return TK_IN;                                                 }
 
 "if"                 { return TK_IF;                                                 }
 "else"               { return TK_ELSE;                                               }
