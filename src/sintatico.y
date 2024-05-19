@@ -107,10 +107,9 @@ EXPRESSION          : CAST { $$ = $1; }
                     | '(' EXPRESSION ')' { $$ = $2; }
                     | FUNCTIONS { $$ = $1; }
                     | TK_ID {
-                        bool found = false;
-                        Variavel* var = findVariableByName($1.label, found);
+                        Variable* var = findVariableByName($1.label);
 
-                        if (!found) {
+                        if (var == NULL) {
                             yyerror("Cannot found symbol \"" + $1.label + "\"");
                             return -1;
                         }
@@ -152,7 +151,7 @@ LET_VARS            : LET_VARS ',' LET_VAR_DECLARTION { $$.translation = $1.tran
 LET_VAR_DECLARTION  : TK_ID RETURN_TYPE {
                         $$.label = gentempcode(true);
                         $$.type = $2.type;
-                        Variavel var = createVariableIfNotExists($1.label, $$.label, $2.type, "", false);
+                        createVariableIfNotExists($1.label, $$.label, $2.type, "", false);
 
                         $$.translation = "";
                     }
@@ -171,13 +170,13 @@ LET_VAR_DECLARTION  : TK_ID RETURN_TYPE {
                         
                         string fakeLabel = $4.label;
 
-                        Variavel var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, false);
+                        Variable *var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, false);
 
                         if ($$.type == STRING_ID) {
                             createString($$.label, translation, $4.label + STRING_SIZE_STR);
                             translation += $$.label + " = strCopy(" + fakeLabel + ", " + $4.label + STRING_SIZE_STR + ");\n";
                         } else {
-                            translation += var.getRealVarLabel() + " = " + fakeLabel + ";\n";
+                            translation += var->getRealVarLabel() + " = " + fakeLabel + ";\n";
                         }
 
                         $$.translation = translation;
@@ -201,13 +200,13 @@ CONST_VAR_DECLARTION: TK_ID RETURN_TYPE {
                         $$.type = $4.type;
                         $$.details = $4.details;
 
-                        Variavel var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, true);
+                        Variable *var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, true);
 
                         if ($$.type == STRING_ID) {
                             createString($$.label, translation, $4.label + STRING_SIZE_STR);
                             translation += $$.label = " = strCopy(" + $4.label + ", " + $4.label + STRING_SIZE_STR + ");\n";
                         } else {
-                            translation += var.getRealVarLabel() + " = " + $4.label + ";\n";
+                            translation += var->getRealVarLabel() + " = " + $4.label + ";\n";
                         }
 
                         $$.translation = translation;
@@ -215,10 +214,9 @@ CONST_VAR_DECLARTION: TK_ID RETURN_TYPE {
                     
 
 ASSIGNMENT          : TK_ID '=' EXPRESSION {
-                        bool found = false;
-                        Variavel* variavel = findVariableByName($1.label, found);
+                        Variable* variavel = findVariableByName($1.label);
 
-                        if (!found) {
+                        if (variavel == NULL) {
                             yyerror("Cannot found symbol \"" + $1.label + "\"");
                             return -1;
                         }
@@ -370,7 +368,7 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                         value += "\"";
 
-                        Variavel var = createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
 
                         createString($$.label, translation, to_string(size));
 
@@ -392,7 +390,7 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                         string value = $1.label;
 
-                        Variavel var = createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
 
                         translation += $$.label + " = " + value + ";\n";
 
@@ -1188,7 +1186,7 @@ int yyparse();
 
 int main(int argc, char* argv[])
 {
+    init();
 	yyparse();
 	return 0;
 }
-
