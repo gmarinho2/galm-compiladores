@@ -158,12 +158,14 @@ namespace context {
             }
     };
 
-    class Stack {
+    list<Variable*> allVariables;
+
+    class ContextStack {
         private:
             list<Context*> contexts;
             int index;
         public:
-            Stack() {
+            ContextStack() {
                 this->index = 0;
             }
 
@@ -187,7 +189,10 @@ namespace context {
             }
 
             Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
-                return top()->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
+                Context* top = this->top();
+                Variable* var = top->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
+                allVariables.push_back(var);
+                return var;
             }
 
             Context* top() {
@@ -217,30 +222,20 @@ namespace context {
             list<Context*> getContexts() {
                 return this->contexts;
             }
-
-            list<Variable*> getAllVariables() {
-                list<Variable*> allVariables;
-
-                for (list<Context*>::iterator it = this->contexts.begin(); it != this->contexts.end(); ++it) {
-                    list<Variable*> variables = (*it)->getVariables();
-
-                    for (list<Variable*>::iterator it2 = variables.begin(); it2 != variables.end(); ++it2) {
-                        allVariables.push_back(*it2);
-                    }
-                }
-
-                return allVariables;
-            }
     };
 
-    Stack* stack = new Stack();
+    ContextStack* contextStack = new ContextStack();
 
     void init() {
         Context* globalContext = new Context();
-        stack->push(globalContext);
+        contextStack->push(globalContext);
     }
 
-    Stack* getContextStack() {
-        return stack;
+    ContextStack* getContextStack() {
+        return contextStack;
+    }
+
+    list<Variable*> getAllVariables() {
+        return allVariables;
     }
 }

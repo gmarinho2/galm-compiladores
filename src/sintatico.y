@@ -73,14 +73,19 @@ S                   : COMMANDS {
 COMMANDS            : COMMAND COMMANDS { $$.translation = $1.translation + $2.translation; }
                     | { $$.translation = ""; }
 
-COMMAND             : '{' COMMANDS '}' { $$.translation = $2.translation; }
+COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $2.translation; }
                     | VARIABLE_DECLARATION { $$ = $1; }
                     | EXPRESSION { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
                     | CONTROL_STRUCTURE { $$ = $1;}
-                    | TK_BREAK_LINE {
-                        $$ = $1;
-                        addLine();
+
+PUSH_NEW_CONTEXT    : '{' {
+                        Context *newContext = new Context();
+                        getContextStack()->push(newContext);
+                    }
+
+POP_CONTEXT         : '}' {
+                        getContextStack()->pop();
                     }
 
 /**

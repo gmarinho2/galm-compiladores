@@ -87,7 +87,7 @@ namespace variaveis {
 
         compilador += "\nint main(void) {\n";
 
-        list<Variable*> allVars = getContextStack()->getAllVariables();
+        list<Variable*> allVars = getAllVariables();
         bool hasTemp = false;
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
