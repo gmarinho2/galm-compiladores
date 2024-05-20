@@ -2,11 +2,31 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 #pragma once
 namespace str {
-    std::vector<std::string> split(std::string str, std::string del) {
+    unsigned long long int currentLine = 1;
+
+    void addLine() {
+        currentLine++;
+    }
+
+    int getCurrentLine() {
+        return currentLine;
+    }
+
+    bool isEquals(string str1, string str2) {
+        for (int i = 0; i < str1.length(); i++) {
+            if (str1[i] != str2[i]) return false;
+        }
+
+        return str1.length() == str2.length();
+    }
+
+    vector<string> split(string str, string del) {
         // Use find function to find 1st position of delimiter.
-        std::vector<std::string> v;
+        vector<string> v;
         int end = str.find(del); 
 
         while (end != -1) { // Loop until no delimiter is left in the string.
@@ -18,9 +38,9 @@ namespace str {
         return v;
     }
 
-    std::string indent(std::string code) {
-        std::vector<std::string> lines = split(code, "\n");
-        std::string identedCode = "";
+    string indent(string code) {
+        vector<string> lines = split(code, "\n");
+        string identedCode = "";
 
         for (int i = 0; i < lines.size(); i++) {
             identedCode += "\t" + lines[i] + "\n";
@@ -29,12 +49,12 @@ namespace str {
         return identedCode;
     }
 
-    int countSubstring(const std::string& str, const std::string& sub) {
+    int countSubstring(const string& str, const string& sub) {
         if (sub.length() == 0 || str.length() < sub.length()) return 0;
 
         int count = 0;
         
-        for (size_t offset = str.find(sub); offset != std::string::npos; offset = str.find(sub, offset + sub.length())) {
+        for (size_t offset = str.find(sub); offset != string::npos; offset = str.find(sub, offset + sub.length())) {
             ++count;
         }
         
@@ -45,7 +65,7 @@ namespace str {
      * Starts with ignores case.
     */
 
-    bool startsWith(const std::string &str, const std::string &start) {
+    bool startsWith(const string &str, const string &start) {
         if (str.length() < start.length()) return false;
 
         for (int i = 0; i < start.length(); i++) {
@@ -59,7 +79,7 @@ namespace str {
      * Ends with ignores case.
     */
 
-    bool endsWith(const std::string &str, const std::string &end) {
+    bool endsWith(const string &str, const string &end) {
         if (str.length() < end.length()) return false;
 
         for (int i = 0; i < end.length(); i++) {
@@ -67,5 +87,10 @@ namespace str {
         }
 
         return true;
+    }
+
+    void yyerror(string message, string error = "Syntax error") {
+        cout << "\033[1;31m" << error << ": " << message << " (line " << currentLine << ")" << endl << "\033[0m";
+        exit(1);
     }
 }

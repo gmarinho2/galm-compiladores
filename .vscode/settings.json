@@ -42,6 +42,8 @@
         "streambuf": "c",
         "cinttypes": "c",
         "typeinfo": "c",
-        "file.h": "c"
+        "file.h": "c",
+        "string.h": "c",
+        "list": "c"
     }
 }
