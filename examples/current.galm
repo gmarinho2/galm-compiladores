@@ -1,15 +1,20 @@
-let t = 1
+let a = 2
 
-{
-    let t = 3
-
-    {
-        let t = 5
-
-        assertEquals(t, 5)
+switch (a) {
+    1, 2 -> {
+        a = 30
+        println("1")
     }
-
-    assertEquals(t, 3)
+    5 -> {
+        println("nao passou aqui... 1")
+    }
+    5 -> {
+        println("nao passou aqui... 2")
+    }
+    10 -> {
+       println("funciona") 
+    }
+    _ -> {
+        println("tem que fazer o break")
+    }
 }
-
-assertEquals(t, 1)

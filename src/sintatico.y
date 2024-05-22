@@ -33,6 +33,8 @@ int yylex(void);
 
 %token TK_PRINTLN TK_PRINT TK_SCAN
 
+%token TK_ARROW TK_SWITCH
+
 %start S
 
 %right '='
@@ -107,11 +109,13 @@ EXPRESSION          : CAST { $$ = $1; }
                     | RELATIONAL { $$ = $1; }
                     | ASSIGNMENT { $$ = $1; }
                     | STRING_CONCAT { $$ = $1; }
-                    | TYPES { $$ = $1; }
+                    | LITERALS { $$ = $1; }
                     | BITWISE {$$ = $1;}
                     | '(' EXPRESSION ')' { $$ = $2; }
                     | FUNCTIONS { $$ = $1; }
-                    | TK_ID {
+                    | PRIMARY { $$ = $1; }
+
+PRIMARY             : TK_ID {
                         Variable* var = findVariableByName($1.label);
 
                         if (var == NULL) {
@@ -277,131 +281,131 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
  * Types
  */
 
- TYPES              : TK_BOOLEAN { 
+ LITERALS              : TK_BOOLEAN { 
                         $$.label = gentempcode();
                         $$.type = BOOLEAN_ID;
                         createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
                         $$.translation = $$.label + " = " + $1.label + ";\n";
-                    }
-                    | TK_REAL {
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
-                        $$.details = REAL_NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, true, true, true);
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
-                    }
-                    | TK_INTEGER_BASE {
-                        string label = $1.label;
-
-                        bool negative = startsWith(label, "-");
-                        
-                        if (negative) {
-                            label = label.substr(1, label.length() - 1);
                         }
+                        | TK_REAL {
+                            $$.label = gentempcode();
+                            $$.type = NUMBER_ID;
+                            $$.details = REAL_NUMBER_ID;
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, true, true, true);
+                            $$.translation = $$.label + " = " + $1.label + ";\n";
+                        }
+                        | TK_INTEGER_BASE {
+                            string label = $1.label;
 
-                        int base;
-
-                        if (startsWith(label, "0b")) {
-                            for (int i = 2; i < label.length(); i++) {
-                                if (label[i] < '0' || label[i]  > '1') {
-                                    yyerror("Invalid binary number, expecting only 0 and 1 and received " + string(1, label[i]), "Lexical error");
-                                }
+                            bool negative = startsWith(label, "-");
+                            
+                            if (negative) {
+                                label = label.substr(1, label.length() - 1);
                             }
 
-                            base = 2;
-                        } else if (startsWith(label, "0o")) {
-                            for (int i = 2; i < label.length(); i++) {
-                                if (label[i] < '0' || label[i]  > '7') {
-                                    yyerror("Invalid octal number, expecting only 0-7 and received " + string(1, label[i]), "Lexical error");
+                            int base;
+
+                            if (startsWith(label, "0b")) {
+                                for (int i = 2; i < label.length(); i++) {
+                                    if (label[i] < '0' || label[i]  > '1') {
+                                        yyerror("Invalid binary number, expecting only 0 and 1 and received " + string(1, label[i]), "Lexical error");
+                                    }
                                 }
+
+                                base = 2;
+                            } else if (startsWith(label, "0o")) {
+                                for (int i = 2; i < label.length(); i++) {
+                                    if (label[i] < '0' || label[i]  > '7') {
+                                        yyerror("Invalid octal number, expecting only 0-7 and received " + string(1, label[i]), "Lexical error");
+                                    }
+                                }
+
+                                base = 8;
+                            } else if (startsWith(label, "0x")) {
+                                for (int i = 2; i < label.length(); i++) {
+                                    if ((label[i] < '0' || label[i]  > '9') && (label[i] < 'A' || label[i] > 'F')) {
+                                        yyerror("Invalid hexadecimal number, expecting only 0-9 and A-F and received " + string(1, label[i]), "Lexical error");
+                                    }
+                                }
+
+                                base = 16;
+                            } else {
+                                yyerror("Invalid base for integer number, expecting token starting with 0x for hexadecimal, 0b for binary or 0o for octal", 
+                                    "Lexical base convertion error");
                             }
 
-                            base = 8;
-                        } else if (startsWith(label, "0x")) {
-                            for (int i = 2; i < label.length(); i++) {
-                                if ((label[i] < '0' || label[i]  > '9') && (label[i] < 'A' || label[i] > 'F')) {
-                                    yyerror("Invalid hexadecimal number, expecting only 0-9 and A-F and received " + string(1, label[i]), "Lexical error");
-                                }
+                            int decimal = stoi(label.substr(2, label.length() - 2), nullptr, base);
+
+                            if (negative) {
+                                decimal = -decimal;
                             }
 
-                            base = 16;
-                        } else {
-                            yyerror("Invalid base for integer number, expecting token starting with 0x for hexadecimal, 0b for binary or 0o for octal", 
-                                "Lexical base convertion error");
+                            $$.label = gentempcode();
+                            $$.type = NUMBER_ID;
+                            $$.details = INTEGER_NUMBER_ID;
+
+                            createVariableIfNotExists($$.label, $$.label, $$.type, to_string(decimal), false, true, true);
+
+                            $$.translation = $$.label + " = " + to_string(decimal) + ";\n";
                         }
-
-                        int decimal = stoi(label.substr(2, label.length() - 2), nullptr, base);
-
-                        if (negative) {
-                            decimal = -decimal;
+                        | TK_INTEGER  { 
+                            $$.label = gentempcode();
+                            $$.type = NUMBER_ID;
+                            $$.details = INTEGER_NUMBER_ID;
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
+                            $$.translation = $$.label + " = " + $1.label + ";\n";
                         }
-
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
-                        $$.details = INTEGER_NUMBER_ID;
-
-                        createVariableIfNotExists($$.label, $$.label, $$.type, to_string(decimal), false, true, true);
-
-                        $$.translation = $$.label + " = " + to_string(decimal) + ";\n";
-                    }
-                    | TK_INTEGER  { 
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
-                        $$.details = INTEGER_NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
-                    }
-                    | TK_CHAR  { 
-                        $$.label = gentempcode();
-                        $$.type = CHAR_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
-                        $$.translation = $$.label + " = " + $1.label + ";\n";
-                    }
-                    | TK_STRING { 
-                        $$.label = gentempcode();
-                        $$.type = STRING_ID;
-
-                        string translation = "";
-                        string originalString = $1.label;
-                        string value = "\"";
-                        
-                        int size = 0;
-
-                        for (int i = 1; i < originalString.length() - 1; i++, size++) {
-                            value += originalString[i];
+                        | TK_CHAR  { 
+                            $$.label = gentempcode();
+                            $$.type = CHAR_ID;
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
+                            $$.translation = $$.label + " = " + $1.label + ";\n";
                         }
+                        | TK_STRING { 
+                            $$.label = gentempcode();
+                            $$.type = STRING_ID;
 
-                        value += "\"";
+                            string translation = "";
+                            string originalString = $1.label;
+                            string value = "\"";
+                            
+                            int size = 0;
 
-                        createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
+                            for (int i = 1; i < originalString.length() - 1; i++, size++) {
+                                value += originalString[i];
+                            }
 
-                        createString($$.label, translation, to_string(size));
+                            value += "\"";
 
-                        translation += $$.label + " = (char*) malloc(" + to_string(size + 1) + ");\n";
+                            createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
 
-                        for (int i = 0; i < size; i++) {
-                            translation += $$.label + "[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
+                            createString($$.label, translation, to_string(size));
+
+                            translation += $$.label + " = (char*) malloc(" + to_string(size + 1) + ");\n";
+
+                            for (int i = 0; i < size; i++) {
+                                translation += $$.label + "[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
+                            }
+
+                            translation += $$.label + "[" + to_string(size) + "] = '\\0';\n";
+
+                            $$.translation = translation;
                         }
+                        | STRING_INTERPOL {
+                            $$.label = gentempcode();
+                            $$.type = STRING_ID;
 
-                        translation += $$.label + "[" + to_string(size) + "] = '\\0';\n";
+                            string translation = $1.translation;
 
-                        $$.translation = translation;
-                    }
-                    | STRING_INTERPOL {
-                        $$.label = gentempcode();
-                        $$.type = STRING_ID;
+                            string value = $1.label;
 
-                        string translation = $1.translation;
+                            createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
 
-                        string value = $1.label;
+                            translation += $$.label + " = " + value + ";\n";
 
-                        createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
-
-                        translation += $$.label + " = " + value + ";\n";
-
-                        createString($$.label, translation, "strLen(" + $$.label + ")");
-                        $$.translation = translation;
-                    }
+                            createString($$.label, translation, "strLen(" + $$.label + ")");
+                            $$.translation = translation;
+                        }
 
 STRING_INTERPOL     : '`' STRING_PIECE '`'                 { 
                         $$ = $2;
@@ -1111,6 +1115,98 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                     |
                     TK_FOR '(' TK_ID TK_IN TK_ID ')' COMMAND {
 
+                    }
+                    |
+                    START_SWITCH '(' PRIMARY ')' COMMAND {
+                        ContextStack* contextStack = getContextStack();
+                        Switch* topSwitch = contextStack->topSwitch();
+
+                        string translation = $3.translation;
+                        string gotoTable = translation += "\n/* START SWITCH TABLE */\n\n";
+                        string switchsCases;
+
+                        for (SwitchCase* switchCase : topSwitch->getCases()) {
+                            if (switchCase->isDefault()) continue;
+
+                            translation += switchCase->getExpressionTranslation();
+
+                            string caseLabel = genlabelcode();
+
+                            vector<string> literals = split(switchCase->getLabel(), ",");
+
+                            for (string literal : literals) {
+                                gotoTable += "if (" + $3.label + " == " + literal + ") ";
+                                gotoTable += "goto " + caseLabel + ";\n";
+                            }
+
+                            switchsCases += "\n/* START CASE " + switchCase->getLabel() + " */\n";
+                            switchsCases += caseLabel + ":\n" + switchCase->getTranslation();
+                            switchsCases += "/* END CASE " + switchCase->getLabel() + " */\n";
+                        }
+
+                        if (topSwitch->hasDefaultCase()) {
+                            string defaultCaseLabel = genlabelcode();
+                            SwitchCase* defaultCase = topSwitch->getDefaultCase();
+
+                            gotoTable += "goto " + defaultCaseLabel + ";\n";
+
+                            switchsCases += "\n/* START DEFAULT CASE */\n";
+                            switchsCases += defaultCaseLabel + ":\n" + defaultCase->getTranslation();
+                            switchsCases += "/* END DEFAULT CASE */\n";
+                        }
+
+                        string endSwitchLabel = topSwitch->getEndSwitchLabel();
+
+                        switchsCases += "\n" + endSwitchLabel + ":\n";
+
+                        gotoTable += "\n/* END SWITCH TABLE */\n";
+
+                        $$.translation = "\n/* START SWITCH STATEMENT */\n\n" + translation + gotoTable + "\n" + switchsCases + "\n/* END SWITCH STATEMENT */\n";
+                        contextStack->popSwitch();
+                    }
+                    |
+                    SWITCH_CASES {}
+
+START_SWITCH       : TK_SWITCH {
+                        ContextStack* contextStack = getContextStack();
+                        contextStack->createSwitch(genlabelcode());
+                    }
+
+MULTIPLE_LITERALS  : LITERALS {
+                        $$.label = $1.label;
+                        $$.translation = $1.translation;
+                    }
+                    | MULTIPLE_LITERALS ',' LITERALS {
+                        $$.label = $1.label + "," + $3.label;
+                        $$.translation = $1.translation + $3.translation;
+                    }
+
+SWITCH_CASES        : MULTIPLE_LITERALS TK_ARROW COMMAND {
+                        ContextStack* contextStack = getContextStack();
+
+                        if (!contextStack->hasCurrentSwitch()) {
+                            yyerror("The switch arrow case operator must be used inside a switch statement.");
+                            return -1;
+                        }
+
+                        contextStack->topSwitch()->addCase($1.label + ",", $1.translation, $3.translation);
+                    }
+                    | '_' TK_ARROW COMMAND {
+                        ContextStack* contextStack = getContextStack();
+
+                        if (!contextStack->hasCurrentSwitch()) {
+                            yyerror("The switch arrow case operator must be used inside a switch statement.");
+                            return -1;
+                        }
+
+                        Switch* topSwitch = contextStack->topSwitch();
+
+                        if (topSwitch->hasDefaultCase()) {
+                            yyerror("The switch statement already has a default case.");
+                            return -1;
+                        }
+
+                        topSwitch->addExaustiveCase($3.translation);
                     }
 
 EXPRESSION_OR_TRUE  : EXPRESSION {
