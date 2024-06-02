@@ -119,12 +119,111 @@ namespace context {
 
     };
 
+    class SwitchCase {
+        private:
+            string label;
+            string expressionTranslation;
+            string translation;
+            int line;
+        public:
+            SwitchCase(string label, string expressionTranslation, string translation, int line) {
+                this->label = label;
+                this->expressionTranslation = expressionTranslation;
+                this->translation = translation;
+                this->line = line;
+            }
+
+            string getLabel() {
+                return label;
+            }
+
+            string getExpressionTranslation() {
+                return expressionTranslation;
+            }
+
+            string getTranslation() {
+                return translation;
+            }
+
+            int getLine() {
+                return line;
+            }
+
+            bool isDefault() {
+                return label == "@default";
+            }
+    };
+
+    class Switch {
+        private:
+            list<SwitchCase*> cases;
+            string endSwitchLabel;
+        public:
+            Switch(string endSwitchLabel) {
+                this->cases = list<SwitchCase*>();
+                this->endSwitchLabel = endSwitchLabel;
+            }
+
+            SwitchCase* addCase(string label, string expressionTranslation, string translation) {
+                vector<string> labelParts = split(label, ",");
+                SwitchCase* sc = new SwitchCase(label, expressionTranslation, translation, getCurrentLine());
+                this->cases.push_back(sc);
+                return sc;
+            }
+
+            SwitchCase* addExaustiveCase(string translation) {
+                return addCase("@default", "", translation);
+            }
+
+            list<SwitchCase*> getCases() {
+                return this->cases;
+            }
+
+            SwitchCase* getDefaultCase() {
+                for (list<SwitchCase*>::iterator it = this->cases.begin(); it != this->cases.end(); ++it) {
+                    SwitchCase* sc = *it;
+
+                    if (sc->getLabel() == "@default") {
+                        return sc;
+                    }
+                }
+
+                return NULL;
+            }
+
+            bool hasDefaultCase() {
+                return getDefaultCase() != NULL;
+            }
+
+            string getEndSwitchLabel() {
+                return this->endSwitchLabel;
+            }
+    };
+
     class Context {
         private:
             list<Variable*> variables;
+
+            list<Switch*> switches;
         public:
             Context() {
                 this->variables = list<Variable*>();
+            }
+
+            Switch* createSwitch(string endSwitchLabel) {
+                Switch* sw = new Switch(endSwitchLabel);
+                this->switches.push_back(sw);
+                return sw;
+            }
+
+            Switch* topSwitch() {
+                return this->switches.back();
+            }
+
+            Switch* popSwitch() {
+                Switch* sw = this->switches.back();
+                this->switches.pop_back();
+                return sw;
             }
             
             Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
@@ -169,6 +268,35 @@ namespace context {
                 this->index = 0;
             }
 
+            Switch* createSwitch(string endSwitchLabel) {
+                return this->top()->createSwitch(endSwitchLabel);
+            }
+
+            Switch* topSwitch() {
+                for (list<Context*>::reverse_iterator it = this->contexts.rbegin(); it != this->contexts.rend(); ++it) {
+                    Switch* sw = (*it)->topSwitch();
+
+                    if (sw != NULL) {
+                        return sw;
+                    }
+                }
+
+                return NULL;
+            }
+
+            Switch* popSwitch() {
+                Switch* topSwitch = this->topSwitch();
+
+                if (topSwitch != NULL) {
+                    return this->top()->popSwitch();
+                }
+
+                return NULL;
+            }
+
+            bool hasCurrentSwitch() {
+                return this->topSwitch() != NULL;
+            }
 
             /**
              * Procura do topo para a base.

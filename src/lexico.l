@@ -39,6 +39,9 @@ OTHER_TYPES "void"|"null"
 "for"                { return TK_FOR;                                                }
 "in"                 { return TK_IN;                                                 }
 
+"switch"             { return TK_SWITCH;                                             }
+"->"                 { return TK_ARROW;                                              }
+
 "if"                 { return TK_IF;                                                 }
 "else"               { return TK_ELSE;                                               }
        
@@ -86,7 +89,7 @@ OTHER_TYPES "void"|"null"
 "**"                 { return TK_POW;                                                }
 [+\-*/|\"]           { return *yytext;                                               }
 [(){}[\]]            { return *yytext;                                               }
-[;,~:=%]             { return *yytext;                                               }
+[;,~:=%_]            { return *yytext;                                               }
       
 ("("{TYPES}")")*     { yylval.label = yytext; return TK_AS;                          }
 {TYPES}("[]")*       { yylval.label = toId(yytext); return TK_TYPE;                  }
