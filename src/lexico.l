@@ -39,6 +39,8 @@ OTHER_TYPES "void"|"null"
 "for"                { return TK_FOR;                                                }
 "in"                 { return TK_IN;                                                 }
 
+"break"              { return TK_BREAK;                                              }
+"continue"           { return TK_CONTINUE;                                           }
 "switch"             { return TK_SWITCH;                                             }
 "->"                 { return TK_ARROW;                                              }
 

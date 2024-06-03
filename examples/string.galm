@@ -15,10 +15,13 @@ let variavelManeira
 
 variavelManeira = "asdokaoskd"
 
+assertEquals("asdokaoskd", variavelManeira)
 assertEquals(variavelManeira.length, 10)
+
+assertEquals("123asokdoasdstephen curry", str8)
 assertEquals(str8.length, 25)
 
-assertEquals(str.length, "Hello".length)
-assertEquals(stringInterpol.length, "Hello world!".length)
-assertEquals(superInterpol.length, "true 1 c".length)
-assertEquals(concat.length, "true 1 c".length)
+assertEquals(str, "Hello")
+assertEquals(stringInterpol, "Hello world!")
+assertEquals(superInterpol, "true 1 c")
+assertEquals(concat, "true 1 c")

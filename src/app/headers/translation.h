@@ -31,12 +31,18 @@ namespace translation {
     };
 
     string translate(const Atributo &arg1, string &translation, string toType, string toDetails = "") {
-        if (arg1.type == toType && arg1.details == toDetails) {
-            return arg1.label;
+        if (arg1.type == toType) {
+            if (toType == NUMBER_ID) {
+                if (arg1.details == toDetails) {
+                    return arg1.label;
+                }
+            } else {
+                return arg1.label;
+            }
         }
         
         string temp = gentempcode();
-        createVariableIfNotExists(temp, temp, toType, temp, toDetails == REAL_NUMBER_ID, true, true);
+        createVariableIfNotExists(temp, temp, toType, temp, toType == NUMBER_ID && toDetails == REAL_NUMBER_ID, true, true);
 
         if (arg1.type == NUMBER_ID) {
             if (toType == BOOLEAN_ID) {
@@ -97,12 +103,25 @@ namespace translation {
 
                 translation += newLabel + " = (char*) malloc(" + stringLength + ");\n";
 
+                string ifLabel = genlabelcode();
+                string elseLabel = genlabelcode();
+
+                translation += "if(!" + notArg + ") goto " + ifLabel + ";\n";
                 translation += newLabel + "[0] = 'f';\n";
                 translation += newLabel + "[1] = 'a';\n";
                 translation += newLabel + "[2] = 'l';\n";
                 translation += newLabel + "[3] = 's';\n";
-                translation += newLabel + "[4] = 'e';\n";  //TODO
+                translation += newLabel + "[4] = 'e';\n";
+                translation += "goto " + elseLabel + ";\n";
+                translation += ifLabel + ":\n";
+                translation += newLabel + "[0] = 't';\n";
+                translation += newLabel + "[1] = 'r';\n";
+                translation += newLabel + "[2] = 'u';\n";
+                translation += newLabel + "[3] = 'e';\n";
+                translation += elseLabel + ":\n";
 
+                translation += "cout << " + stringLength + " << endl;\n";
+                
                 createString(temp, translation, stringLength);
                 translation += temp + " = strCopy(" + newLabel + ", " + stringLength + ");\n";
             } else {
