@@ -33,7 +33,7 @@ int yylex(void);
 
 %token TK_PRINTLN TK_PRINT TK_SCAN
 
-%token TK_ARROW TK_SWITCH
+%token TK_ARROW TK_SWITCH TK_BREAK TK_CONTINUE
 
 %start S
 
@@ -79,6 +79,8 @@ COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $
                     | VARIABLE_DECLARATION { $$ = $1; }
                     | EXPRESSION { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
+                    | BREAK_COMMAND { $$ = $1; }
+                    | CONTINUE_COMMAND { $$ = $1; }
                     | CONTROL_STRUCTURE { $$ = $1;}
 
 PUSH_NEW_CONTEXT    : '{' {
@@ -381,13 +383,11 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                             createString($$.label, translation, to_string(size));
 
-                            translation += $$.label + " = (char*) malloc(" + to_string(size + 1) + ");\n";
+                            translation += $$.label + " = (char*) malloc(" + to_string(size) + ");\n";
 
                             for (int i = 0; i < size; i++) {
                                 translation += $$.label + "[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
                             }
-
-                            translation += $$.label + "[" + to_string(size) + "] = '\\0';\n";
 
                             $$.translation = translation;
                         }
@@ -501,16 +501,16 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         createVariableIfNotExists(ifTempLabel, ifTempLabel, BOOLEAN_ID, "", false, true, true);
 
                         translation += "\n/* Assert Line " + to_string(getCurrentLine()) + " */\n";
-                        translation += ifTempLabel + " = " + $3.label + " != " + $5.label + ";\n\n";
-
-                        string ifNotLabel = gentempcode();
-                        createVariableIfNotExists(ifNotLabel, ifNotLabel, BOOLEAN_ID, "", false, true, true);
-
-                        translation += ifNotLabel + " = !" + ifTempLabel + ";\n";
+                    
+                        if ($3.type == STRING_ID) {
+                            translation += ifTempLabel + " = isStringEquals(" + $3.label + ", " + $3.label + STRING_SIZE_STR + ", " + $5.label + ", " + $5.label + STRING_SIZE_STR + ");\n\n";
+                        } else {
+                            translation += ifTempLabel + " = " + $3.label + " == " + $5.label + ";\n\n";
+                        }
 
                         string ifGotoLabel = genlabelcode();
 
-                        translation += "if (" + ifNotLabel + ") goto " + ifGotoLabel + ";\n";
+                        translation += "if (" + ifTempLabel + ") goto " + ifGotoLabel + ";\n";
                         translation += "cout << \"\\033[4;31m"
                                 "The test in line " + to_string(getCurrentLine()) + " failed... "
                                 "Cannot assert \" << " +
@@ -910,7 +910,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                     |
                     EXPRESSION TK_DIFFERENT EXPRESSION {
                         if ($1.type != $3.type && (!isInterpretedAsNumeric($1.type) || !isInterpretedAsNumeric($3.type))) {
-                            yyerror("The operator != must be used with the same type", "No match operator");
+                            yyerror("The operator == must be used with the same type", "No match operator " + $1.type + " " + $3.type);
                             return -1;
                         }
 
@@ -920,10 +920,19 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         string translation = $1.translation + $3.translation;
 
                         string sLabel = translate($3, translation, $1.type, $1.details);
-
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = translation + $$.label + " = " + $1.label + " != " + sLabel + ";\n";
+                        if ($1.type == STRING_ID) { //TODO
+                            string aux = gentempcode();
+                            createVariableIfNotExists(aux, aux, BOOLEAN_ID, aux, false, true, true);
+
+                            translation += aux + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + sLabel + ", " + sLabel + STRING_SIZE_STR + ");\n";
+                            translation += $$.label + " = !" + aux + ";\n";
+                        } else {
+                            translation += $$.label + " = " + $1.label + " != " + sLabel + ";\n";
+                        }
+
+                        $$.translation = translation;
                     }
                     |
                     EXPRESSION TK_EQUALS EXPRESSION {
@@ -941,10 +950,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
                         if ($1.type == STRING_ID) { //TODO
-                            string aux = gentempcode();
-                            createVariableIfNotExists(aux, aux, BOOLEAN_ID, aux, false, true, true);
-
-                            translation += $$.label + " = " + $1.label + STRING_SIZE_STR + " == " + sLabel + STRING_SIZE_STR + ";\n";
+                            translation += $$.label + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + sLabel + ", " + sLabel + STRING_SIZE_STR + ");\n";
                         } else {
                             translation += $$.label + " = " + $1.label + " == " + sLabel + ";\n";
                         }
@@ -1043,12 +1049,12 @@ BITWISE             : EXPRESSION TK_BITAND EXPRESSION {
 /** Control structures 
  *
  */
-CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
+CONTROL_STRUCTURE   : START_WHILE_TOKEN '(' EXPRESSION ')' COMMAND {
                         if($3.type != BOOLEAN_ID) yyerror("Must be a boolean");
 
                         string temp = gentempcode();                       
-                        string inicioWhileLabel = genlabelcode();
-                        string fimWhileLabel = genlabelcode();
+                        string inicioWhileLabel = $1.label.substr(0, $1.label.find(" "));
+                        string fimWhileLabel = $1.label.substr($1.label.find(" ") + 1);    
 
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
 
@@ -1063,14 +1069,14 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                         translation += fimWhileLabel + ": \n";
 
                         $$.translation = translation;
+                        getContextStack()->popEndableStatement();
                     }
-                    |
-                    TK_DO COMMAND TK_WHILE '(' EXPRESSION ')'{
+                    | START_DO_WHILE_TOKEN COMMAND TK_WHILE '(' EXPRESSION ')'{
                         if($5.type != BOOLEAN_ID) yyerror("Must be a boolean");
 
                         string temp = gentempcode();                       
-                        string inicioWhileLabel = genlabelcode();
-                        string fimWhileLabel = genlabelcode();
+                        string inicioWhileLabel = $1.label.substr(0, $1.label.find(" "));
+                        string fimWhileLabel = $1.label.substr($1.label.find(" ") + 1);    
 
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
 
@@ -1086,15 +1092,17 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                         translation += fimWhileLabel + ": \n";
 
                         $$.translation = translation;
+                        getContextStack()->popEndableStatement();
                     }
-                    | TK_FOR '(' MULTIPLE_ASSIGNMENTS ';' EXPRESSION_OR_TRUE ';' MULTIPLE_EXPRESSIONS ')' COMMAND {
+                    | START_FOR_TOKEN '(' FOR_ASSIGMENT ';' EXPRESSION_OR_TRUE ';' MULTIPLE_EXPRESSIONS ')' COMMAND {
                         if ($5.type != BOOLEAN_ID) {
                             yyerror("The expression (the second statement in the for) must be a boolean");
                         }
 
                         string temp = gentempcode();
                         string inicioForLabel = genlabelcode();
-                        string fimForLabel = genlabelcode();
+                        string inicioVerificacaoLabel = $1.label.substr(0, $1.label.find(" "));
+                        string fimForLabel = $1.label.substr($1.label.find(" ") + 1);      
 
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "", false, false, true);
 
@@ -1106,22 +1114,28 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                         translation += temp + " = !(" + $5.label + "); \n";
                         translation += "if (" + temp + ") goto " + fimForLabel + ";\n";
                         translation += $9.translation;
+                        translation += inicioVerificacaoLabel + ":\n";
                         translation += $7.translation;
                         translation += "goto " + inicioForLabel + ";\n";
                         translation += fimForLabel + ": \n";
 
                         $$.translation = translation;
+                        getContextStack()->popEndableStatement();
+                        getContextStack()->pop();
                     }
-                    |
-                    TK_FOR '(' TK_ID TK_IN TK_ID ')' COMMAND {
-
+                    | START_FOR_TOKEN '(' TK_ID TK_IN TK_ID ')' COMMAND {
+                        getContextStack()->popEndableStatement();
                     }
-                    |
-                    START_SWITCH '(' PRIMARY ')' COMMAND {
+                    | START_SWITCH '{' SWITCH_CASES '}' {
                         ContextStack* contextStack = getContextStack();
-                        Switch* topSwitch = contextStack->topSwitch();
+                        Switch* topSwitch = contextStack->popSwitch();
 
-                        string translation = $3.translation;
+                        if (topSwitch->getCases().empty()) {
+                            yyerror("The switch statement must have at least one case.");
+                            return -1;
+                        }
+
+                        string translation = $1.translation;
                         string gotoTable = translation += "\n/* START SWITCH TABLE */\n\n";
                         string switchsCases;
 
@@ -1135,7 +1149,16 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                             vector<string> literals = split(switchCase->getLabel(), ",");
 
                             for (string literal : literals) {
-                                gotoTable += "if (" + $3.label + " == " + literal + ") ";
+                                string label = gentempcode();
+                                Variable *variable = createVariableIfNotExists(label, label, BOOLEAN_ID, "", false, false, false);
+
+                                if (topSwitch->getSwitchType() == STRING_ID) {
+                                    gotoTable += label + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + literal + ", " + literal + STRING_SIZE_STR + ");\n";
+                                } else {
+                                    gotoTable += label + " = " + $1.label + " == " + literal + ";\n";
+                                }
+
+                                gotoTable += "if (" + label + ")\n";
                                 gotoTable += "goto " + caseLabel + ";\n";
                             }
 
@@ -1162,26 +1185,80 @@ CONTROL_STRUCTURE   : TK_WHILE '(' EXPRESSION ')' COMMAND {
                         gotoTable += "\n/* END SWITCH TABLE */\n";
 
                         $$.translation = "\n/* START SWITCH STATEMENT */\n\n" + translation + gotoTable + "\n" + switchsCases + "\n/* END SWITCH STATEMENT */\n";
-                        contextStack->popSwitch();
+                        contextStack->popEndableStatement();
                     }
-                    |
-                    SWITCH_CASES {}
 
-START_SWITCH       : TK_SWITCH {
+START_WHILE_TOKEN   : TK_WHILE {
+                        Context* context = getContextStack()->top();
+
+                        string inicioWhileLabel = genlabelcode();
+                        string fimWhileLabel = genlabelcode();
+
+                        context->createEndableStatement(inicioWhileLabel, fimWhileLabel);
+
+                        $$.label = inicioWhileLabel + " " + fimWhileLabel;
+                    }
+
+START_DO_WHILE_TOKEN: TK_DO {
+                        Context* context = getContextStack()->top();
+
+                        string inicioWhileLabel = genlabelcode();
+                        string fimWhileLabel = genlabelcode();
+
+                        context->createEndableStatement(inicioWhileLabel, fimWhileLabel);
+
+                        $$.label = inicioWhileLabel + " " + fimWhileLabel;
+                    }
+
+START_FOR_TOKEN     : TK_FOR {
+                        Context* context = new Context();
+
+                        string inicioForLabel = genlabelcode();
+                        string fimForLabel = genlabelcode();
+
+                        getContextStack()->push(context);
+                        context->createEndableStatement(inicioForLabel, fimForLabel);
+
+                        $$.label = inicioForLabel + " " + fimForLabel;
+                    }
+
+START_SWITCH       : TK_SWITCH '(' PRIMARY ')' {
                         ContextStack* contextStack = getContextStack();
-                        contextStack->createSwitch(genlabelcode());
+                        
+                        string endSwitchLabel = genlabelcode();
+
+                        contextStack->createEndableStatement("", endSwitchLabel, true);
+                        contextStack->createSwitch($3.type, endSwitchLabel);
+
+                        $$.translation = $3.translation;
+                        $$.label = $3.label;
+                        $$.details = $3.details;
                     }
 
 MULTIPLE_LITERALS  : LITERALS {
                         $$.label = $1.label;
+                        $$.type = $1.type;
                         $$.translation = $1.translation;
                     }
                     | MULTIPLE_LITERALS ',' LITERALS {
+                        if ($1.type != $3.type) {
+                            yyerror("The literals of switch statement must have the same type.", "Type error");
+                            return -1;
+                        }
+
                         $$.label = $1.label + "," + $3.label;
+                        $$.type = $1.type;
                         $$.translation = $1.translation + $3.translation;
                     }
 
-SWITCH_CASES        : MULTIPLE_LITERALS TK_ARROW COMMAND {
+SWITCH_CASES       : SWITCH_CASE {
+                        $$.translation = $1.translation;
+                    }
+                    | SWITCH_CASES SWITCH_CASE {
+                        $$.translation = $1.translation + $2.translation;
+                    }
+
+SWITCH_CASE        : MULTIPLE_LITERALS TK_ARROW COMMAND {
                         ContextStack* contextStack = getContextStack();
 
                         if (!contextStack->hasCurrentSwitch()) {
@@ -1189,7 +1266,14 @@ SWITCH_CASES        : MULTIPLE_LITERALS TK_ARROW COMMAND {
                             return -1;
                         }
 
-                        contextStack->topSwitch()->addCase($1.label + ",", $1.translation, $3.translation);
+                        Switch* topSwitch = contextStack->topSwitch();
+
+                        if (topSwitch->getSwitchType() != $1.type) {
+                            yyerror("The switch case must have the same type as the switch statement. (Case " + $1.type + ", switch type " + topSwitch->getSwitchType() + ")");
+                            return -1;
+                        }
+
+                        topSwitch->addCase($1.label + ",", $1.translation, $3.translation);
                     }
                     | '_' TK_ARROW COMMAND {
                         ContextStack* contextStack = getContextStack();
@@ -1212,8 +1296,7 @@ SWITCH_CASES        : MULTIPLE_LITERALS TK_ARROW COMMAND {
 EXPRESSION_OR_TRUE  : EXPRESSION {
                         $$ = $1;
                     }
-                    | 
-                    {
+                    | {
                         string temp = gentempcode();
                         createVariableIfNotExists(temp, temp, BOOLEAN_ID, "true", false, false, true);
 
@@ -1222,13 +1305,17 @@ EXPRESSION_OR_TRUE  : EXPRESSION {
                         $$.translation = temp + " = true;\n";
                     }
 
+FOR_ASSIGMENT       : VARIABLE_DECLARATION { $$.translation = $1.translation; }
+                    | MULTIPLE_ASSIGNMENTS { $$.translation = $1.translation; }
+                    | { $$.translation = ""; }
+
+
 MULTIPLE_ASSIGNMENTS: ASSIGNMENT {
                         $$.translation = $1.translation;
                     }
                     | MULTIPLE_ASSIGNMENTS ',' ASSIGNMENT {
                         $$.translation = $1.translation + $3.translation;
                     }
-                    | { $$.translation = ""; }
 
 MULTIPLE_EXPRESSIONS: EXPRESSION {
                         $$.translation = $1.translation;
@@ -1237,6 +1324,50 @@ MULTIPLE_EXPRESSIONS: EXPRESSION {
                         $$.translation = $1.translation + $3.translation;
                     }
                     | { $$.translation = ""; }
+
+/**
+* Break and Continue
+*/
+
+BREAK_COMMAND       : TK_BREAK {
+                        ContextStack* contextStack = getContextStack();
+                        EndableStatement* endable = contextStack->topEndableStatement();
+
+                        if(endable == NULL) {
+                            yyerror("The break statement must be used inside a loop or switch statement");
+                            return -1;
+                        }
+
+                        if (endable->isSwitchStatement()) {
+                            Switch* switchStatement = contextStack->topSwitch();
+
+                            $$.translation = "goto " + switchStatement->getEndSwitchLabel() + ";\n";
+                        } else {
+                            string inicioLoopLabel = endable->getStartLabel();
+                            string fimLoopLabel = endable->getEndLabel();
+
+                            $$.translation = "goto " + fimLoopLabel + ";\n";
+                        }
+                    }
+
+CONTINUE_COMMAND    : TK_CONTINUE {
+                        ContextStack* contextStack = getContextStack();
+                        EndableStatement* loop = contextStack->topLoopStatement();
+
+                        if(loop == NULL) {
+                            yyerror("The continue statement must be used inside a loop statement");
+                            return -1;
+                        }
+
+                        if (loop->isSwitchStatement()) {
+                            yyerror("The continue statement must be used inside a loop statement");
+                            return -1;
+                        }
+
+                        string inicioLoopLabel = loop->getStartLabel();
+                        $$.translation = "goto " + inicioLoopLabel + ";\n";
+                    }
+
 /**
  * Conditionals
  */

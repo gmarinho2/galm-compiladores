@@ -157,11 +157,17 @@ namespace context {
     class Switch {
         private:
             list<SwitchCase*> cases;
+            string switchType;
             string endSwitchLabel;
         public:
-            Switch(string endSwitchLabel) {
+            Switch(string switchType, string endSwitchLabel) {
                 this->cases = list<SwitchCase*>();
+                this->switchType = switchType;
                 this->endSwitchLabel = endSwitchLabel;
+            }
+
+            string getSwitchType() {
+                return this->switchType;
             }
 
             SwitchCase* addCase(string label, string expressionTranslation, string translation) {
@@ -200,18 +206,80 @@ namespace context {
             }
     };
 
+    class EndableStatement {
+        private:
+            string startLabel;
+            string endLabel;
+            bool switchStatement;
+        public:
+            EndableStatement(string startLabel, string endLabel, bool switchStatement = false) {
+                this->startLabel = startLabel;
+                this->endLabel = endLabel;
+                this->switchStatement = switchStatement;
+            }
+
+            bool isSwitchStatement() {
+                return switchStatement;
+            }
+
+            string getStartLabel() {
+                return startLabel;
+            }
+
+            string getEndLabel() {
+                return endLabel;
+            }
+
+            bool hasEndLabel() {
+                return !endLabel.empty();
+            }
+
+            bool hasStartLabel() {
+                return !startLabel.empty();
+            }
+    };
+
     class Context {
         private:
             list<Variable*> variables;
 
             list<Switch*> switches;
+            list<EndableStatement*> endableStatements;
         public:
             Context() {
                 this->variables = list<Variable*>();
             }
 
-            Switch* createSwitch(string endSwitchLabel) {
-                Switch* sw = new Switch(endSwitchLabel);
+            EndableStatement* createEndableStatement(string startLabel, string endLabel, bool switchStatement = false) {
+                EndableStatement* es = new EndableStatement(startLabel, endLabel, switchStatement);
+                this->endableStatements.push_back(es);
+                return es;
+            }   
+
+            EndableStatement* topEndableStatement() {
+                return this->endableStatements.back();
+            }
+
+            EndableStatement* popEndableStatement() {
+                EndableStatement* es = this->endableStatements.back();
+                this->endableStatements.pop_back();
+                return es;
+            }
+
+            EndableStatement* topLoopStatement() {
+                for (list<EndableStatement*>::reverse_iterator it = this->endableStatements.rbegin(); it != this->endableStatements.rend(); ++it) {
+                    EndableStatement* es = *it;
+
+                    if (!es->isSwitchStatement()) {
+                        return es;
+                    }
+                }
+
+                return NULL;
+            }
+
+            Switch* createSwitch(string switchType, string endSwitchLabel) {
+                Switch* sw = new Switch(switchType, endSwitchLabel);
                 this->switches.push_back(sw);
                 return sw;
             }
@@ -268,8 +336,8 @@ namespace context {
                 this->index = 0;
             }
 
-            Switch* createSwitch(string endSwitchLabel) {
-                return this->top()->createSwitch(endSwitchLabel);
+            Switch* createSwitch(string switchType, string endSwitchLabel) {
+                return this->top()->createSwitch(switchType, endSwitchLabel);
             }
 
             Switch* topSwitch() {
@@ -285,10 +353,12 @@ namespace context {
             }
 
             Switch* popSwitch() {
-                Switch* topSwitch = this->topSwitch();
+                for (list<Context*>::reverse_iterator it = this->contexts.rbegin(); it != this->contexts.rend(); ++it) {
+                    Switch* popSwitch = (*it)->topSwitch();
 
-                if (topSwitch != NULL) {
-                    return this->top()->popSwitch();
+                    if (popSwitch != NULL) {
+                        return (*it)->popSwitch();
+                    }
                 }
 
                 return NULL;
@@ -296,6 +366,44 @@ namespace context {
 
             bool hasCurrentSwitch() {
                 return this->topSwitch() != NULL;
+            }
+
+            EndableStatement* createEndableStatement(string startLabel, string endLabel, bool switchStatement = false) {
+                return this->top()->createEndableStatement(startLabel, endLabel, switchStatement);
+            }
+
+            EndableStatement* topEndableStatement() {
+                for (list<Context*>::reverse_iterator it = this->contexts.rbegin(); it != this->contexts.rend(); ++it) {
+                    EndableStatement* es = (*it)->topEndableStatement();
+
+                    if (es != NULL) {
+                        return es;
+                    }
+                }
+
+                return NULL;
+            }
+
+            EndableStatement* topLoopStatement() {
+                for (list<Context*>::reverse_iterator it = this->contexts.rbegin(); it != this->contexts.rend(); ++it) {
+                    EndableStatement* es = (*it)->topLoopStatement();
+
+                    if (es != NULL) {
+                        return es;
+                    }
+                }
+
+                return NULL;
+            }
+
+            EndableStatement* popEndableStatement() {
+                EndableStatement* topEndableStatement = this->topEndableStatement();
+
+                if (topEndableStatement != NULL) {
+                    return this->top()->popEndableStatement();
+                }
+
+                return NULL;
             }
 
             /**

@@ -51,6 +51,7 @@ namespace variaveis {
         utilitiesFunctionsFiles.push_back("stringConcat");
         utilitiesFunctionsFiles.push_back("strLen");
         utilitiesFunctionsFiles.push_back("realToString");
+        utilitiesFunctionsFiles.push_back("isStringEquals");
         int assertCount = countSubstring(codigo, "assert");
 
         string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n#include <string.h>\n\n";

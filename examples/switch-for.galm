@@ -1,0 +1,30 @@
+for (let i = 0; i < 10; i = i + 1) {
+    switch (i) {
+    0, 1, 2, 3, 4, 5 -> {
+        println("Caso maluco quando " <> i)
+        break
+    }
+    _ -> {
+        println("Exaustivo")
+        break
+    }
+    }
+}
+
+let i = 0
+
+switch (i) {
+    0 -> {
+        for (let j = 0; j < 10; j = j + 1) {
+            if (j <= 5) continue
+
+            println("Break quando 6")
+            break
+        }
+
+        println("sabe que tem que vir aqui né?")
+    }
+    _ -> {
+        println("Depois passa no exaustivo")
+    }
+}
