@@ -48,6 +48,7 @@ int yylex(void);
 %left '+' '-'
 %left '*' '/' TK_DIV '%'
 %right TK_POW
+%left UNARY
 %right '.'
 
 %left TK_CONCAT
@@ -77,7 +78,8 @@ COMMANDS            : COMMAND COMMANDS { $$.translation = $1.translation + $2.tr
 
 COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $2.translation; }
                     | VARIABLE_DECLARATION { $$ = $1; }
-                    | EXPRESSION { $$ = $1; }
+                    | ASSIGNMENT { $$ = $1; }
+                    | FUNCTIONS { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
                     | BREAK_COMMAND { $$ = $1; }
                     | CONTINUE_COMMAND { $$ = $1; }
@@ -91,11 +93,6 @@ PUSH_NEW_CONTEXT    : '{' {
 POP_CONTEXT         : '}' {
                         getContextStack()->pop();
                     }
-
-/**
- * Functions
- */
-
 
 RETURN_TYPE         : ':' TK_TYPE { $$.type = $2.label; }
                     | ':' TK_VOID { $$.type = VOID_ID; }
@@ -484,10 +481,12 @@ CAST                : TK_AS EXPRESSION {
  */
 
 FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
+                        $$.type = VOID_ID;
                         $$.translation = $3.translation + "cout << " + $3.label + " << endl;\n";
                     }
                     | TK_PRINT '(' EXPRESSION ')' {
-                            $$.translation = $3.translation + "cout << " + $3.label + ";\n";
+                        $$.type = VOID_ID;
+                        $$.translation = $3.translation + "cout << " + $3.label + ";\n";
                     }
                     | TK_ASSERT_EQUALS '(' EXPRESSION ',' EXPRESSION ')' {
                         if ($3.type != $5.type) {
@@ -523,6 +522,7 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                                 "\n";
                         translation += ifGotoLabel + ":\n";
 
+                        $$.type = VOID_ID;
                         $$.translation = translation;
                     }
                     | EXPRESSION '.' TK_LENGTH {
@@ -726,8 +726,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
 
                         $$.translation = $1.translation + translation;
                     }
-                    |
-                    EXPRESSION TK_POW EXPRESSION {
+                    | EXPRESSION TK_POW EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
                             yyerror("The operator ^ must be used with a number type");
                             return -1;
