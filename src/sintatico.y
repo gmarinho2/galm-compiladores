@@ -40,9 +40,8 @@ int yylex(void);
 %right '='
 %right TK_AS
 
-%left TK_ASSERT_EQUALS
-
-%left TK_AND TK_OR
+%left TK_AND
+%left TK_OR
 %left TK_EQUALS TK_DIFFERENT TK_GREATER TK_LESS TK_GREATER_EQUALS TK_LESS_EQUALS
 
 %left '+' '-'
