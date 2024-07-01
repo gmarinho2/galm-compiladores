@@ -141,7 +141,12 @@ namespace variaveis {
     
     void createString(string strLabel, string &translation, string sizeStr = "") {
         string sizeOfString = strLabel + STRING_SIZE_STR;
-        createVariableIfNotExists(sizeOfString, sizeOfString, NUMBER_ID, sizeStr, false, true, true);
+        
+        Variable* var = findVariableByName("@" + sizeOfString);
+
+        if (var == NULL) {
+            createVariableIfNotExists("@" + sizeOfString, sizeOfString, NUMBER_ID, sizeStr, false, true);
+        }
 
         translation += sizeOfString + " = " + sizeStr+ ";\n";
     }
