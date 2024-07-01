@@ -1,0 +1,15 @@
+let t = 1
+
+{
+    let t = 3
+
+    {
+        let t = 5
+
+        assertEquals(t, 5)
+    }
+
+    assertEquals(t, 3)
+}
+
+assertEquals(t, 1)

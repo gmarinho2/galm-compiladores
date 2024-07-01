@@ -1,0 +1,16 @@
+let t1 = 1
+let t2 = true
+let t3 = false
+
+let t4, t5: number, t7: number = 1
+
+let a = 1
+let b = a + 1
+
+assertEquals(a, 1)
+assertEquals(b, 2)
+
+let c
+c = 1
+
+const t8 = 1, t9: number = 5

@@ -2,27 +2,30 @@ name: Test Examples
 
 on:
   pull_request:
-    branches:
-      - develop
+    branches: ["develop", "main"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.10'
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
 
-    - name: Install lex and yacc
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bison flex
+      - name: Install lex and yacc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bison flex
 
-    - name: Run Test 
-      run: |
-        python __test__/test.py
+      - name: Install libfl-dev & G++
+        run: |
+          sudo apt-get install -y libfl-dev g++
+
+      - name: Run Test
+        run: |
+          python __test__/test.py

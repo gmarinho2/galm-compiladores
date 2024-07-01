@@ -3,7 +3,6 @@
 ## list directories
 
 import os
-import time
 import shutil
 
 def list_files(s):
@@ -32,13 +31,10 @@ else:
     shutil.rmtree(test_path)
     os.makedirs(test_path)
 
-time.sleep(0.1)
-
 if (os.system(f"make compile >/dev/null") != 0):
     print("\nThe project could not be compiled")
-    exit(0)
+    exit(1)
 
-time.sleep(0.1)
 print("The project has been compiled successfully\nStarting the tests:\n")
 
 for file in test_files:

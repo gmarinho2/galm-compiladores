@@ -1,3 +1,7 @@
 let a = 1
 let b = 2
 let c = a > b
+
+assertEquals(a, 1)
+assertEquals(b, 2)
+assertEquals(c, false)
