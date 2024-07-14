@@ -633,25 +633,29 @@ int isLessThanOrEquals(number a, number b) {
 char numberToChar(number a) {
     int i1;
 
-    if (a.isInteger) {
-        i1 = a.value.integer;
-    } else {
-        i1 = (int) a.value.real;
-    }
+    if (a.isInteger) goto integerIf;
 
-    int c = (char) i1;
-
-    return c;
+floatIf:
+    i1 = (int) a.value.real;
+    goto endIf;
+integerIf:
+    i1 = a.value.integer;
+endIf:
+    
+    return (char) i1;   
 }
 
 bool numberToBool(number a) {
     int i1;
 
-    if (a.isInteger) {
-        i1 = a.value.integer;
-    } else {
-        i1 = (int) a.value.real;
-    }
+    if (a.isInteger) goto integerIf;
+
+floatIf:
+    i1 = (int) a.value.real;
+    goto endIf;
+integerIf:
+    i1 = a.value.integer;
+endIf:
 
     return i1 != 0;
 }
@@ -689,11 +693,14 @@ String numberToString(number n) {
 
     str.str = (char*) malloc(12);
 
-    if (n.isInteger) {
-        sprintf(str.str, "%d", n.value.integer);
-    } else {
-        sprintf(str.str, "%f", n.value.real);
-    }
+    if (n.isInteger) goto integerIf;
+
+floatIf:
+    sprintf(str.str, "%f", n.value.real);
+    goto endIf;
+integerIf:
+    sprintf(str.str, "%d", n.value.integer);
+endIf:
 
     str.length = strLen(str.str);
 
