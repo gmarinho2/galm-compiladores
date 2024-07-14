@@ -31,7 +31,7 @@ int yylex(void);
 
 %token TK_BITAND TK_BITOR TK_BITXOR TK_BITLEFT TK_BITRIGHT TK_BITNOT
 
-%token TK_PRINTLN TK_PRINT TK_SCAN
+%token TK_PRINTLN TK_PRINT TK_SCAN TK_TYPEOF
 
 %token TK_ARROW TK_SWITCH TK_BREAK TK_CONTINUE
 
@@ -126,23 +126,9 @@ PRIMARY             : TK_ID {
                             return -1;
                         }
 
-                        $$.label = gentempcode();
+                        $$.label = var->getRealVarLabel();
                         $$.type = var->getVarType();
                         $$.details = var->getDetails();
-
-                        string realName = var->getRealVarLabel();
-                        string translation = "";
-                        
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, $$.details == REAL_NUMBER_ID, true, true);
-
-                        if ($$.type == STRING_ID) {
-                            createString($$.label, translation, realName + STRING_SIZE_STR);
-                            translation += $$.label + " = strCopy(" + realName + ", " + realName + STRING_SIZE_STR + ");\n";
-                        } else {
-                            translation += $$.label + " = " + realName + ";\n";
-                        }
-
-                        $$.translation = translation;
                     }
 
 /**
@@ -180,8 +166,10 @@ LET_VAR_DECLARTION  : TK_ID RETURN_TYPE {
                         Variable *var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, false);
 
                         if ($$.type == STRING_ID) {
-                            createString($$.label, translation, $4.label + STRING_SIZE_STR);
-                            translation += $$.label + " = strCopy(" + fakeLabel + ", " + $4.label + STRING_SIZE_STR + ");\n";
+                            translation += $$.label + " = strCopy(" + fakeLabel + ");\n";
+                        } else if ($$.type == NUMBER_ID) {
+                            translation += var->getRealVarLabel() + ".value." + $4.details + " = " + fakeLabel + ".value." + $4.details + ";\n";
+                            translation += var->getRealVarLabel() + ".isInteger = " + fakeLabel + ".isInteger;\n";
                         } else {
                             translation += var->getRealVarLabel() + " = " + fakeLabel + ";\n";
                         }
@@ -210,8 +198,10 @@ CONST_VAR_DECLARTION: TK_ID RETURN_TYPE {
                         Variable *var = createVariableIfNotExists($1.label, $$.label, $$.type, $4.label, $$.details == REAL_NUMBER_ID, true);
 
                         if ($$.type == STRING_ID) {
-                            createString($$.label, translation, $4.label + STRING_SIZE_STR);
-                            translation += $$.label = " = strCopy(" + $4.label + ", " + $4.label + STRING_SIZE_STR + ");\n";
+                            translation += $$.label = " = strCopy(" + $4.label + ");\n";
+                        } else if ($$.type == NUMBER_ID) {
+                            translation += var->getRealVarLabel() + ".value." + $4.details + " = " + $4.label + ".value." + $4.details + ";\n";
+                            translation += var->getRealVarLabel() + ".isInteger = " + $4.label + ".isInteger;\n";
                         } else {
                             translation += var->getRealVarLabel() + " = " + $4.label + ";\n";
                         }
@@ -252,24 +242,19 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
                             variavel->setIsReal($3.details == REAL_NUMBER_ID);
                         }
 
-                        $$.label = gentempcode();
+                        $$.label = variavel->getRealVarLabel();
                         $$.type = varType;
-                        $$.details = $1.details;
+                        $$.details = $3.details;
 
                         string translation = $1.translation + $3.translation;
-                        string realName = variavel->getRealVarLabel();
-
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, $$.details == REAL_NUMBER_ID, true, true);
 
                         if ($$.type == STRING_ID) {
-                            createString($$.label, translation, $3.label + STRING_SIZE_STR);
-                            createString(realName, translation, $3.label + STRING_SIZE_STR);
-
-                            translation += $$.label + " = strCopy(" + $3.label + ", " + $3.label + STRING_SIZE_STR + ");\n";
-                            translation += realName + " = strCopy(" + $3.label + ", " + $3.label + STRING_SIZE_STR + ");\n";
+                            translation += $$.label + " = strCopy(" + $3.label + ");\n";
+                        } else if ($$.type == NUMBER_ID) {
+                            translation += $$.label + ".value." + $3.details + " = " + $3.label + ".value." + $3.details + "; // ASSIGN\n";
+                            translation += $$.label + ".isInteger = " + $3.label + ".isInteger; // ASSIGN\n";
                         } else {
                             translation += $$.label + " = " + $3.label + ";\n";
-                            translation += realName + " = " + $3.label + ";\n";
                         }
 
                         $$.translation = translation;
@@ -290,7 +275,16 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
                             $$.type = NUMBER_ID;
                             $$.details = REAL_NUMBER_ID;
                             createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, true, true, true);
-                            $$.translation = $$.label + " = " + $1.label + ";\n";
+                            $$.translation = $$.label + ".value.real = " + $1.label + ";\n";
+                            $$.translation += $$.label + ".isInteger = false;\n";
+                        }
+                        | TK_INTEGER  { 
+                            $$.label = gentempcode();
+                            $$.type = NUMBER_ID;
+                            $$.details = INTEGER_NUMBER_ID;
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
+                            $$.translation = $$.label + ".value.integer = " + $1.label + ";\n";
+                            $$.translation += $$.label + ".isInteger = true;\n";
                         }
                         | TK_INTEGER_BASE {
                             string label = $1.label;
@@ -344,14 +338,8 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                             createVariableIfNotExists($$.label, $$.label, $$.type, to_string(decimal), false, true, true);
 
-                            $$.translation = $$.label + " = " + to_string(decimal) + ";\n";
-                        }
-                        | TK_INTEGER  { 
-                            $$.label = gentempcode();
-                            $$.type = NUMBER_ID;
-                            $$.details = INTEGER_NUMBER_ID;
-                            createVariableIfNotExists($$.label, $$.label, $$.type, $1.label, false, true, true);
-                            $$.translation = $$.label + " = " + $1.label + ";\n";
+                            $$.translation = $$.label + ".value.integer = " + to_string(decimal) + ";\n";
+                            $$.translation += $$.label + ".isInteger = true;\n";
                         }
                         | TK_CHAR  { 
                             $$.label = gentempcode();
@@ -377,13 +365,13 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                             createVariableIfNotExists($$.label, $$.label, $$.type, value, false, true, true);
 
-                            createString($$.label, translation, to_string(size));
-
-                            translation += $$.label + " = (char*) malloc(" + to_string(size) + ");\n";
+                            translation += $$.label + ".str = (char*) malloc(" + to_string(size) + ");\n";
 
                             for (int i = 0; i < size; i++) {
-                                translation += $$.label + "[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
+                                translation += $$.label + ".str[" + to_string(i) + "] = '" + originalString[i + 1] + "';\n";
                             }
+
+                            translation += $$.label + ".length = " + to_string(size) + ";\n";
 
                             $$.translation = translation;
                         }
@@ -399,7 +387,7 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                             translation += $$.label + " = " + value + ";\n";
 
-                            createString($$.label, translation, "strLen(" + $$.label + ")");
+                            //createString($$.label, translation, "strLen(" + $$.label + ")");
                             $$.translation = translation;
                         }
 
@@ -409,7 +397,7 @@ STRING_INTERPOL     : '`' STRING_PIECE '`'                 {
                     | '`' STRING_PIECE STRING_PIECE_LIST '`'      { 
                         $$.label = "concat(" + $2.label + ", " + $3.label + ")";
                         $$.translation = $2.translation + $3.translation;
-                        $$.details = $2.label + STRING_SIZE_STR + " + " + $3.label + STRING_SIZE_STR;
+                        $$.details = $2.label + ".length + " + $3.label + ".length";
                     }
 
 STRING_PIECE       : TK_INTER_STRING                      { 
@@ -420,8 +408,9 @@ STRING_PIECE       : TK_INTER_STRING                      {
 
                         createVariableIfNotExists($$.label, $$.label, STRING_ID, $1.label, false, true, true);
 
-                        translation += $$.label + " = (char*) malloc(1);\n";
-                        translation += $$.label + "[0] = '" + $1.label + "';\n";
+                        translation += $$.label + ".str = (char*) malloc(1);\n";
+                        translation += $$.label + ".str[0] = '" + $1.label + "';\n";
+                        translation += $$.label + ".length = 1;\n";
 
                         $$.translation = translation;
                     }
@@ -481,11 +470,47 @@ CAST                : TK_AS EXPRESSION {
 
 FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         $$.type = VOID_ID;
-                        $$.translation = $3.translation + "cout << " + $3.label + " << endl;\n";
+
+                        string label = translate($3, $3.translation, STRING_ID);
+
+                        $$.translation = $3.translation + "cout << " + label + ".str << endl;\n";
                     }
                     | TK_PRINT '(' EXPRESSION ')' {
                         $$.type = VOID_ID;
-                        $$.translation = $3.translation + "cout << " + $3.label + ";\n";
+
+                        string label = translate($3, $3.translation, STRING_ID);
+
+                        $$.translation = $3.translation + "cout << " + label + ".str;\n";
+                    }
+                    | TK_SCAN '(' ')' {
+                        $$.label = gentempcode();
+                        $$.type = STRING_ID;
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", false, true, true);
+
+                        $$.translation = $$.label + " = readInput();\n";
+                    }
+                    | TK_TYPEOF '(' EXPRESSION ')' {
+                        $$.label = gentempcode();
+                        $$.type = STRING_ID;
+
+                        string translation = $3.translation;
+
+                        string label = translate($3, translation, STRING_ID);
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", false, true, true);
+
+                        string originalString = toLowerCase($3.type);
+
+                        translation += $$.label + ".str = (char*) malloc(" + to_string(originalString.length()) + ");\n";
+
+                        for (int i = 0; i < originalString.length(); i++) {
+                            translation += $$.label + ".str[" + to_string(i) + "] = '" + originalString[i] + "';\n";
+                        }
+
+                        translation += $$.label + ".length = " + to_string($3.type.length()) + ";\n";
+
+                        $$.translation = $3.translation + translation;
                     }
                     | TK_ASSERT_EQUALS '(' EXPRESSION ',' EXPRESSION ')' {
                         if ($3.type != $5.type) {
@@ -498,28 +523,33 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         string ifTempLabel = gentempcode();
                         createVariableIfNotExists(ifTempLabel, ifTempLabel, BOOLEAN_ID, "", false, true, true);
 
-                        translation += "\n/* Assert Line " + to_string(getCurrentLine()) + " */\n";
+                        translation += "\n/* Assert Line " + to_string(getCurrentLine()) + " */\n\n";
                     
                         if ($3.type == STRING_ID) {
-                            translation += ifTempLabel + " = isStringEquals(" + $3.label + ", " + $3.label + STRING_SIZE_STR + ", " + $5.label + ", " + $5.label + STRING_SIZE_STR + ");\n\n";
+                            translation += ifTempLabel + " = isStringEquals(" + $3.label + ", " + $5.label + ");\n";
+                        } else if ($3.type == NUMBER_ID) {
+                            translation += ifTempLabel + " = isNumberEquals(" + $3.label + ", " + $5.label + ");\n";
                         } else {
-                            translation += ifTempLabel + " = " + $3.label + " == " + $5.label + ";\n\n";
+                            translation += ifTempLabel + " = " + $3.label + " == " + $5.label + ";\n";
                         }
 
                         string ifGotoLabel = genlabelcode();
 
-                        translation += "if (" + ifTempLabel + ") goto " + ifGotoLabel + ";\n";
+                        string label1 = translate($3, translation, STRING_ID);
+                        string label2 = translate($5, translation, STRING_ID);
+
+                        translation += "\nif (" + ifTempLabel + ") goto " + ifGotoLabel + ";\n";
                         translation += "cout << \"\\033[4;31m"
                                 "The test in line " + to_string(getCurrentLine()) + " failed... "
                                 "Cannot assert \" << " +
-                                $3.label +
-                                " << \" is equals to \" << " +
-                                $5.label +
-                                " << \""
+                                label1 +
+                                ".str << \" is equals to \" << " +
+                                label2 +
+                                ".str << \""
                                 "\\033[0m\" << endl;"
                                 "\nexit(1);"
                                 "\n";
-                        translation += ifGotoLabel + ":\n";
+                        translation += ifGotoLabel + ":\n\n";
 
                         $$.type = VOID_ID;
                         $$.translation = translation;
@@ -536,7 +566,9 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
 
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $$.label + " = " + $1.label + STRING_SIZE_STR + ";\n";
+                        $$.translation = $1.translation;
+                        $$.translation += $$.label + ".value.integer = " + $1.label + ".length;\n";
+                        $$.translation += $$.label + ".isInteger = true;\n";
                     }
 
 /**
@@ -553,7 +585,6 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                         $$.type = STRING_ID;
 
                         createVariableIfNotExists($$.label, $$.label, STRING_ID, $$.label, false, true, true);
-                        createString($$.label, translation, fLabel + STRING_SIZE_STR + " + " + sLabel + STRING_SIZE_STR);
 
                         $$.translation = translation + $$.label + " = concat(" + fLabel + ", " + sLabel + ");\n";
                     }
@@ -583,7 +614,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " * " + sLabel + ";\n";
+                        translation += $$.label + " = multiply(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -599,7 +630,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        translation += $$.label + " = " + fLabel+ " / " + sLabel + ";\n";
+                        translation += $$.label + " = divideInteger(" + fLabel+ ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -615,7 +646,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true, true);
 
-                        translation += $$.label + " = " + fLabel + " / " + sLabel + ";\n";
+                        translation += $$.label + " = divide(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -640,7 +671,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
 
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " + " + sLabel + ";\n";
+                        translation += $$.label + " = sum(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -670,7 +701,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " - " + sLabel + ";\n";
+                        translation += $$.label + " = subtract(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -685,45 +716,7 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                             return -1;
                         }
                         
-                        string translation = $3.translation;
-
-                        string div = gentempcode();
-                        createVariableIfNotExists(div, div, NUMBER_ID, div, false, true, true);
-
-                        translation += div + " = " + $1.label + " / " + $3.label + ";\n";
-
-                        string mult = gentempcode();
-                        createVariableIfNotExists(mult, mult, NUMBER_ID, mult, false, true, true);
-
-                        translation += mult + " = " + div + " * " + $3.label + ";\n";
-
-                        string mod = gentempcode();
-                        createVariableIfNotExists(mod, mod, NUMBER_ID, mod, false, true, true);
-
-                        translation += mod + " = " + $1.label + " - " + mult + ";\n";
-
-                        string mask = gentempcode();
-                        createVariableIfNotExists(mask, mask, NUMBER_ID, mask, false, true, true);
-
-                        translation += mask + " = " + mod + " >> 31;\n";
-
-                        string exclusiveOr = gentempcode();
-                        createVariableIfNotExists(exclusiveOr, exclusiveOr, NUMBER_ID, exclusiveOr, false, true, true);
-
-                        translation += exclusiveOr + " = " + mask + " ^ " + mod + ";\n";
-
-                        string absolute = gentempcode();
-                        createVariableIfNotExists(absolute, absolute, NUMBER_ID, absolute, false, true, true);
-
-                        translation += absolute + " = " + exclusiveOr + " - " + mask + ";\n";
-
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
-
-                        translation += $$.label + " = " + absolute + ";\n";
-
-                        $$.translation = $1.translation + translation;
+                        $$.translation = $3.translation + $1.translation + $$.label + " = mod(" + $1.label + ", " + $3.label + ");\n";
                     }
                     | EXPRESSION TK_POW EXPRESSION {
                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
@@ -838,7 +831,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " > " + sLabel + ";\n";
+                        translation += $$.label + " = isGreaterThan(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -859,7 +852,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " < " + sLabel + ";\n";
+                        translation += $$.label + " = isLessThan(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -880,7 +873,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " >= " + sLabel + ";\n";
+                        translation += $$.label + " = isGreaterThanOrEquals(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -901,7 +894,7 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         $$.label = gentempcode();
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
 
-                        translation += $$.label + " = " + fLabel + " <= " + sLabel + ";\n";
+                        translation += $$.label + " = isLessThanOrEquals(" + fLabel + ", " + sLabel + ");\n";
 
                         $$.translation = $1.translation + translation;
                     }
@@ -921,13 +914,13 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
                         if ($1.type == STRING_ID) { //TODO
-                            string aux = gentempcode();
-                            createVariableIfNotExists(aux, aux, BOOLEAN_ID, aux, false, true, true);
-
-                            translation += aux + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + sLabel + ", " + sLabel + STRING_SIZE_STR + ");\n";
-                            translation += $$.label + " = !" + aux + ";\n";
+                            translation += $$.label + " = isStringEquals(" + $1.label + ", " + sLabel + ");\n";
+                            translation += $$.label + " = !" + $$.label + ";\n";
+                        } else if ($1.type == NUMBER_ID) { //TODO
+                            translation += $$.label + " = isNumberEquals(" + $1.label + ", " + sLabel + ");\n";
+                            translation += $$.label + " = !" + $$.label + ";\n";
                         } else {
-                            translation += $$.label + " = " + $1.label + " != " + sLabel + ";\n";
+                            translation += $$.label + " = " + $1.label + " != " + sLabel + "; / * é aqui? */\n";
                         }
 
                         $$.translation = translation;
@@ -948,7 +941,9 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
                         if ($1.type == STRING_ID) { //TODO
-                            translation += $$.label + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + sLabel + ", " + sLabel + STRING_SIZE_STR + ");\n";
+                            translation += $$.label + " = isStringEquals(" + $1.label + ", " + sLabel + ");\n";
+                        } else if ($1.type == NUMBER_ID) { //TODO
+                            translation += $$.label + " = isNumberEquals(" + $1.label + ", " + sLabel + ");\n";
                         } else {
                             translation += $$.label + " = " + $1.label + " == " + sLabel + ";\n";
                         }
@@ -961,86 +956,86 @@ LOGICAL             : EXPRESSION TK_AND EXPRESSION {
  */
 
 BITWISE             : EXPRESSION TK_BITAND EXPRESSION {
-                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
-                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
-                                yyerror("The operator & must be used with a number or char type");
-                            }
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator & must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        $$.details = INTEGER_NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " & " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + $$.label + " = bitAnd(" + $1.label + ", " + $3.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
                     |
                     EXPRESSION TK_BITOR EXPRESSION {
-                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
-                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
-                                yyerror("The operator | must be used with a number or char type");
-                            }
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator | must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        $$.details = INTEGER_NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " | " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + $$.label + " = bitOr(" + $1.label + ", " + $3.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
                     |
                     EXPRESSION TK_BITXOR EXPRESSION {
-                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
-                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
-                                yyerror("The operator ^ must be used with a number or char type");
-                            }
+                         if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator ^ must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        $$.details = INTEGER_NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " ^ " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + $$.label + " = bitXor(" + $1.label + ", " + $3.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
                     |
                     TK_BITNOT EXPRESSION {
-                        if($2.type != CHAR_ID && $2.type != NUMBER_ID){
-                            if($2.details == REAL_NUMBER_ID)
-                                yyerror("The operator ~ must be used with a number or char type");
+                        if ($2.type != NUMBER_ID) {
+                            yyerror("The operator ~ must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        $$.details = INTEGER_NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $2.translation + $$.label + " = " + "~ " + $2.label + ";\n";
+                        $$.translation = $2.translation + $$.label + " = bitNot(" + $2.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
                     |
                     EXPRESSION TK_BITLEFT EXPRESSION {
-                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
-                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
-                                yyerror("The operator << must be used with a number or char type");
-                            }
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator << must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        $$.details = INTEGER_NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " << " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + $$.label + " = bitShiftLeft(" + $1.label + ", " + $3.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
                     |
                     EXPRESSION TK_BITRIGHT EXPRESSION {
-                        if($1.type != CHAR_ID && $1.type != NUMBER_ID || $3.type != CHAR_ID && $3.type != NUMBER_ID){
-                            if($1.details == REAL_NUMBER_ID || $3.details == REAL_NUMBER_ID){
-                                yyerror("The operator >> must be used with a number or char type");
-                            }
+                        if ($1.type != NUMBER_ID || $3.type != NUMBER_ID) {
+                            yyerror("The operator >> must be used with a number type");
+                            return -1;
                         }
 
                         $$.label = gentempcode();
                         $$.type = NUMBER_ID;
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, $$.details == REAL_NUMBER_ID, true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, false, true, true);
 
-                        $$.translation = $1.translation + $3.translation + $$.label + " = " + $1.label + " >> " + $3.label + ";\n";
+                        $$.translation = $1.translation + $3.translation + $$.label + " = bitShiftRight(" + $1.label + ", " + $3.label + ", " + to_string(getCurrentLine()) + ");\n";
                     }
 
 
@@ -1151,12 +1146,14 @@ CONTROL_STRUCTURE   : START_WHILE_TOKEN '(' EXPRESSION ')' COMMAND {
                                 Variable *variable = createVariableIfNotExists(label, label, BOOLEAN_ID, "", false, false, false);
 
                                 if (topSwitch->getSwitchType() == STRING_ID) {
-                                    gotoTable += label + " = isStringEquals(" + $1.label + ", " + $1.label + STRING_SIZE_STR + ", " + literal + ", " + literal + STRING_SIZE_STR + ");\n";
+                                    gotoTable += label + " = isStringEquals(" + $1.label + ", " + literal + ");\n";
+                                } else if (topSwitch->getSwitchType() == NUMBER_ID) {
+                                    gotoTable += label + " = isNumberEquals(" + $1.label + ", " + literal + "); // OXE\n";
                                 } else {
                                     gotoTable += label + " = " + $1.label + " == " + literal + ";\n";
                                 }
 
-                                gotoTable += "if (" + label + ")\n";
+                                gotoTable += "if (" + label + ") ";
                                 gotoTable += "goto " + caseLabel + ";\n";
                             }
 
@@ -1271,7 +1268,7 @@ SWITCH_CASE        : MULTIPLE_LITERALS TK_ARROW COMMAND {
                             return -1;
                         }
 
-                        topSwitch->addCase($1.label + ",", $1.translation, $3.translation);
+                        topSwitch->addCase($1.label, $1.translation, $3.translation);
                     }
                     | '_' TK_ARROW COMMAND {
                         ContextStack* contextStack = getContextStack();

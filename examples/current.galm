@@ -1,7 +1,9 @@
-let a: string = "teste"
+let a = 1
+let b = 2
+let c = a & b
 
-while (true) {
-    a = "teste"
-    println(a)
-    break
-}
+c = a | b
+c = a ^ b
+c = ~b
+c = a << b
+c = a >> b

@@ -10,11 +10,9 @@ namespace context {
 
     const string NUMBER_ID = "number";
     const string BOOLEAN_ID = "bool";
-    const string STRING_ID = "char*";
+    const string STRING_ID = "String";
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
-
-    const string STRING_SIZE_STR = "_len";
 
     bool isVoid(string voidString) {
         return voidString == VOID_ID || voidString == "void*";
@@ -22,9 +20,6 @@ namespace context {
 
     const string REAL_NUMBER_ID = "real";
     const string INTEGER_NUMBER_ID = "integer";
-
-    const string REAL_NUMBER_DEFINITION = "double";
-    const string INTEGER_NUMBER_DEFINITION = "int";
 
     class Variable {
         private:
@@ -86,18 +81,10 @@ namespace context {
                     return "void*";
                 }
 
-                if (this->temp || endsWith(this->varName, STRING_SIZE_STR)) {
-                    if (this->varType == NUMBER_ID) {
-                        return real ? "float" : "int";
-                    }
-                }
-
                 return this->varType;
             }
 
             string getRealVarLabel() {
-                if (this->varType == NUMBER_ID) 
-                    return varLabel + "." +  (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID);
                 return varLabel;
             }
 

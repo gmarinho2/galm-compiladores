@@ -32,6 +32,8 @@ OTHER_TYPES "void"|"null"
 "assertEquals"       { return TK_ASSERT_EQUALS;                                      }
 "println"            { return TK_PRINTLN;                                            }
 "print"              { return TK_PRINT;                                              }
+"scan"               { return TK_SCAN;                                               }
+"typeof"             { return TK_TYPEOF;                                             }
 "length"             { return TK_LENGTH;                                             }
        
 "do"                 { return TK_DO;                                                 }
