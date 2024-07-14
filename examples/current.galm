@@ -1,9 +1,2 @@
-let a = 1
-let b = 2
-let c = a & b
-
-c = a | b
-c = a ^ b
-c = ~b
-c = a << b
-c = a >> b
+let a = `ola mundo ${2 + 2}$`
+println(a.length)

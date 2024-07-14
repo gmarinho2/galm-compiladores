@@ -30,19 +30,13 @@ namespace translation {
             }
     };
 
-    string translate(const Atributo &arg1, string &translation, string toType, string toDetails = "") {
+    string translate(const Atributo &arg1, string &translation, string toType) {
         if (arg1.type == toType) {
-            if (toType == NUMBER_ID) {
-                if (arg1.details == toDetails) {
-                    return arg1.label;
-                }
-            } else {
-                return arg1.label;
-            }
+            return arg1.label;
         }
         
         string temp = gentempcode();
-        createVariableIfNotExists(temp, temp, toType, temp, toType == NUMBER_ID && toDetails == REAL_NUMBER_ID, true, true);
+        createVariableIfNotExists(temp, temp, toType, temp, true, true);
 
         if (arg1.type == NUMBER_ID) {
             if (toType == BOOLEAN_ID) {
@@ -51,16 +45,10 @@ namespace translation {
                 translation += temp + " = numberToChar(" + arg1.label + ");\n";
             } else if (toType == STRING_ID) {
                 string newLabel = gentempcode();
-                createVariableIfNotExists(newLabel, newLabel, STRING_ID, newLabel, false, true, true);
+                createVariableIfNotExists(newLabel, newLabel, STRING_ID, newLabel, true, true);
 
                 translation += newLabel + " = numberToString(" + arg1.label + ");\n";
                 translation += temp + " = strCopy(" + newLabel + ");\n";
-            } else if (!empty(toDetails)) {
-                if (toDetails == REAL_NUMBER_ID) {
-                    translation += temp + " = intToFloat(" + arg1.label + ");\n";
-                } else {
-                    translation += temp + " = floatToInt(" + arg1.label + ");\n";
-                }
             } else {
                 yyerror("Cannot convert number to " + toType, "Type check error");
             }
@@ -83,7 +71,7 @@ namespace translation {
                 translation += temp + ".isInteger = true;\n";
             } else if (toType == STRING_ID) {
                 string notArg = gentempcode();
-                createVariableIfNotExists(notArg, notArg, BOOLEAN_ID, notArg, false, true, true);
+                createVariableIfNotExists(notArg, notArg, BOOLEAN_ID, notArg, true, true);
 
                 translation += notArg + " = !" + arg1.label + ";\n";
 

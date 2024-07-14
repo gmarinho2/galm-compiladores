@@ -20,7 +20,6 @@ namespace variaveis {
     typedef struct {
         string label;
         string type;
-        string details;
         string translation;
     } Atributo;
 
@@ -109,8 +108,8 @@ namespace variaveis {
         return getContextStack()->findVariableByName(varName);
     }
 
-    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
-        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
+    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
+        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isConst, isTemp);
     }
 
     bool isInterpretedAsNumeric(string type) {

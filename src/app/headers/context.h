@@ -18,9 +18,6 @@ namespace context {
         return voidString == VOID_ID || voidString == "void*";
     }
 
-    const string REAL_NUMBER_ID = "real";
-    const string INTEGER_NUMBER_ID = "integer";
-
     class Variable {
         private:
             string varName;
@@ -28,16 +25,14 @@ namespace context {
             string varType;
             string varValue;
             bool constant;
-            bool real;
             bool temp;
         public:
-            Variable(string varName, string varLabel, string varType, string varValue, bool constant, bool real = false, bool temp = false) {
+            Variable(string varName, string varLabel, string varType, string varValue, bool constant, bool temp = false) {
                 this->varName = varName;
                 this->varLabel = varLabel;
                 this->varType = varType;
                 this->varValue = varValue;
                 this->constant = constant;
-                this->real = real;
                 this->temp = temp;
             }
 
@@ -68,14 +63,6 @@ namespace context {
                 this->varType = type;
             }
 
-            void setIsReal(bool real) {
-                this->real = real;
-            }
-
-            bool isReal() {
-                return real;
-            }
-
             string getVarType() {
                 if (this->varType == VOID_ID) {
                     return "void*";
@@ -86,10 +73,6 @@ namespace context {
 
             string getRealVarLabel() {
                 return varLabel;
-            }
-
-            string getDetails() {
-                return varType == NUMBER_ID ? (real ? REAL_NUMBER_ID : INTEGER_NUMBER_ID) : "";
             }
 
             bool isConstant() {
@@ -281,12 +264,12 @@ namespace context {
                 return sw;
             }
             
-            Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
+            Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
                 string realVarName = isTemp ? "@" + varName : varName;
                 Variable* variable = findVariableByName(realVarName);
 
                 if (variable == NULL) {
-                    Variable* var = new Variable(realVarName, varLabel, varType, varValue, isConst, isReal, isTemp);
+                    Variable* var = new Variable(realVarName, varLabel, varType, varValue, isConst, isTemp);
                     this->variables.push_back(var);
                     return var;
                 }
@@ -411,9 +394,9 @@ namespace context {
                 return NULL;
             }
 
-            Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
+            Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
                 Context* top = this->top();
-                Variable* var = top->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
+                Variable* var = top->createVariableIfNotExists(varName, varLabel, varType, varValue, isConst, isTemp);
                 allVariables.push_back(var);
                 return var;
             }

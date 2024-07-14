@@ -309,7 +309,10 @@ number divideInteger(number a, number b) {
 }
 
 number mod(number a, number b) {
-    // A AND B IS INTEGER
+    if (!a.isInteger || !b.isInteger) {
+        dispatchError("Modulus operator can only be performed on integers", 0);
+    }
+
     int div = a.value.integer / b.value.integer;
     int mult = div * b.value.integer;
     int mod = a.value.integer - mult;
@@ -323,10 +326,6 @@ number mod(number a, number b) {
     result.isInteger = true;
 
     return result;
-}
-
-float absolute(float a) {
-    return a < 0 ? -a : a;
 }
 
 float ln(float a) {
