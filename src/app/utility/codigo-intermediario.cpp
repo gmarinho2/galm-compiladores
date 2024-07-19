@@ -92,140 +92,186 @@ void dispatchError(string message, int currentLine) {
 
 number sum(number a, number b) {
     number result;
-
     int flag;
+    float f1, f2;
+    int i1, i2;
+    
+    float temp1, temp2;
+    int temp3, temp4;
 
-    if (!a.isInteger || !b.isInteger) {
-        result.isInteger = false;
+    bool isAInteger = a.isInteger;
+    bool isBInteger = b.isInteger;
 
-        float f1;
-        float f2;
+    bool isNotAInteger = !isAInteger;
+    bool isNotBInteger = !isBInteger;
+    bool eitherNotInteger = isNotAInteger || isNotBInteger;
 
-        if (a.isInteger) {
-            f1 = (float) a.value.integer;
-        } else {
-            f1 = a.value.real;
-        }
+    if (eitherNotInteger) goto L1;
+    result.isInteger = true;
+    goto L2;
 
-        if (b.isInteger) {
-            f2 = (float) b.value.integer;
-        } else {
-            f2 = b.value.real;
-        }
+    L1:
+    result.isInteger = false;
 
-        result.value.real = f1 + f2;
-    } else {
-        result.isInteger = true;
-        
-        int i1;
-        int i2;
+    if (!isAInteger) goto L3;
+    temp1 = (float) a.value.integer;
+    goto L4;
+    L3:
+    temp1 = a.value.real;
 
-        if (a.isInteger) {
-            i1 = a.value.integer;
-        } else {
-            i1 = (int) a.value.real;
-        }
+    L4:
+    f1 = temp1;
 
-        if (b.isInteger) {
-            i2 = b.value.integer;
-        } else {
-            i2 = (int) b.value.real;
-        }
+    if (!isBInteger) goto L5;
+    temp2 = (float) b.value.integer;
+    goto L6;
+    L5:
+    temp2 = b.value.real;
 
-        result.value.integer = i1 + i2;
-    }
+    L6:
+    f2 = temp2;
 
+    result.value.real = f1 + f2;
+    goto L7;
+
+    L2:
+    if (!isAInteger) goto L8;
+    temp3 = a.value.integer;
+    goto L9;
+    L8:
+    temp3 = (int) a.value.real;
+
+    L9:
+    i1 = temp3;
+
+    if (!isBInteger) goto L10;
+    temp4 = b.value.integer;
+    goto L11;
+    L10:
+    temp4 = (int) b.value.real;
+
+    L11:
+    i2 = temp4;
+
+    result.value.integer = i1 + i2;
+
+    L7:
     return result;
 }
 
 number subtract(number a, number b) {
     number result;
-
     int flag;
+    float f1, f2;
+    int i1, i2;
 
-    if (!a.isInteger || !b.isInteger) {
-        result.isInteger = false;
+    int tempFlag1, tempFlag2;
+    float temp1, temp2;
+    int temp3, temp4;
 
-        float f1;
-        float f2;
+    tempFlag1 = !a.isInteger;
+    tempFlag2 = !b.isInteger;
+    if (tempFlag1) goto HandleReal;
+    if (tempFlag2) goto HandleReal;
+    result.isInteger = true;
+    goto HandleInteger;
 
-        if (a.isInteger) {
-            f1 = (float) a.value.integer;
-        } else {
-            f1 = a.value.real;
-        }
+    HandleReal:
+    result.isInteger = false;
+    if (a.isInteger) goto ConvertAtoFloat;
+    temp1 = a.value.real;
+    goto AConverted;
+    
+    ConvertAtoFloat:
+    temp1 = (float) a.value.integer;
 
-        if (b.isInteger) {
-            f2 = (float) b.value.integer;
-        } else {
-            f2 = b.value.real;
-        }
+    AConverted:
+    f1 = temp1;
+    if (b.isInteger) goto ConvertBtoFloat;
+    temp2 = b.value.real;
+    goto BConverted;
+    
+    ConvertBtoFloat:
+    temp2 = (float) b.value.integer;
 
-        result.value.real = f1 - f2;
-    } else {
-        result.isInteger = true;
-        
-        int i1;
-        int i2;
+    BConverted:
+    f2 = temp2;
+    result.value.real = f1 - f2;
+    goto End;
 
-        if (a.isInteger) {
-            i1 = a.value.integer;
-        } else {
-            i1 = (int) a.value.real;
-        }
+    HandleInteger:
+    if (a.isInteger) goto ConvertAtoInt;
+    temp3 = (int) a.value.real;
+    goto AConvertedToInt;
+    
+    ConvertAtoInt:
+    temp3 = a.value.integer;
 
-        if (b.isInteger) {
-            i2 = b.value.integer;
-        } else {
-            i2 = (int) b.value.real;
-        }
+    AConvertedToInt:
+    i1 = temp3;
+    if (b.isInteger) goto ConvertBtoInt;
+    temp4 = (int) b.value.real;
+    goto BConvertedToInt;
 
-        result.value.integer = i1 - i2;
-    }
+    ConvertBtoInt:
+    temp4 = b.value.integer;
 
+    BConvertedToInt:
+    i2 = temp4;
+    result.value.integer = i1 - i2;
+
+    End:
     return result;
 }
 
+
+
 number multiply(number a, number b) {
     number result;
-
     int flag;
 
-    if (!a.isInteger || !b.isInteger) {
+    bool isAInteger = a.isInteger;
+    bool isBInteger = b.isInteger;
+
+    bool isNotAInteger = !isAInteger;
+    bool isNotBInteger = !isBInteger;
+    bool eitherNotInteger = isNotAInteger || isNotBInteger;
+
+    if (eitherNotInteger) {
         result.isInteger = false;
 
         float f1;
         float f2;
 
-        if (a.isInteger) {
-            f1 = (float) a.value.integer;
-        } else {
+        if (!isAInteger) {
             f1 = a.value.real;
+        } else {
+            f1 = (float) a.value.integer;
         }
 
-        if (b.isInteger) {
-            f2 = (float) b.value.integer;
-        } else {
+        if (!isBInteger) {
             f2 = b.value.real;
+        } else {
+            f2 = (float) b.value.integer;
         }
 
         result.value.real = f1 * f2;
     } else {
         result.isInteger = true;
-        
+
         int i1;
         int i2;
 
-        if (a.isInteger) {
-            i1 = a.value.integer;
-        } else {
+        if (!isAInteger) {
             i1 = (int) a.value.real;
+        } else {
+            i1 = a.value.integer;
         }
 
-        if (b.isInteger) {
-            i2 = b.value.integer;
-        } else {
+        if (!isBInteger) {
             i2 = (int) b.value.real;
+        } else {
+            i2 = b.value.integer;
         }
 
         result.value.integer = i1 * i2;
@@ -236,44 +282,50 @@ number multiply(number a, number b) {
 
 number divide(number a, number b) {
     number result;
-
     int flag;
 
-    if (!a.isInteger || !b.isInteger) {
+    bool isAInteger = a.isInteger;
+    bool isBInteger = b.isInteger;
+
+    bool isNotAInteger = !isAInteger;
+    bool isNotBInteger = !isBInteger;
+    bool eitherNotInteger = isNotAInteger || isNotBInteger;
+
+    if (eitherNotInteger) {
         result.isInteger = false;
 
         float f1;
         float f2;
 
-        if (a.isInteger) {
-            f1 = (float) a.value.integer;
-        } else {
+        if (!isAInteger) {
             f1 = a.value.real;
+        } else {
+            f1 = (float) a.value.integer;
         }
 
-        if (b.isInteger) {
-            f2 = (float) b.value.integer;
-        } else {
+        if (!isBInteger) {
             f2 = b.value.real;
+        } else {
+            f2 = (float) b.value.integer;
         }
 
         result.value.real = f1 / f2;
     } else {
         result.isInteger = true;
-        
+
         int i1;
         int i2;
 
-        if (a.isInteger) {
-            i1 = a.value.integer;
-        } else {
+        if (!isAInteger) {
             i1 = (int) a.value.real;
+        } else {
+            i1 = a.value.integer;
         }
 
-        if (b.isInteger) {
-            i2 = b.value.integer;
-        } else {
+        if (!isBInteger) {
             i2 = (int) b.value.real;
+        } else {
+            i2 = b.value.integer;
         }
 
         result.value.integer = i1 / i2;
@@ -282,25 +334,27 @@ number divide(number a, number b) {
     return result;
 }
 
+
 number divideInteger(number a, number b) {
     number result;
-
     result.isInteger = true;
 
+    bool isAInteger = a.isInteger;
+    bool isBInteger = b.isInteger;
+
     int i1;
-
-    if (a.isInteger) {
-        i1 = a.value.integer;
-    } else {
-        i1 = (int) a.value.real;
-    }
-
     int i2;
 
-    if (b.isInteger) {
-        i2 = b.value.integer;
+    if (!isAInteger) {
+        i1 = (int) a.value.real;
     } else {
+        i1 = a.value.integer;
+    }
+
+    if (!isBInteger) {
         i2 = (int) b.value.real;
+    } else {
+        i2 = b.value.integer;
     }
 
     result.value.integer = i1 / i2;
@@ -309,7 +363,14 @@ number divideInteger(number a, number b) {
 }
 
 number mod(number a, number b) {
-    if (!a.isInteger || !b.isInteger) {
+    bool isAInteger = a.isInteger;
+    bool isBInteger = b.isInteger;
+
+    bool isNotAInteger = !isAInteger;
+    bool isNotBInteger = !isBInteger;
+    bool eitherNotInteger = isNotAInteger || isNotBInteger;
+
+    if (eitherNotInteger) {
         dispatchError("Modulus operator can only be performed on integers", 0);
     }
 
@@ -329,192 +390,325 @@ number mod(number a, number b) {
 }
 
 float ln(float a) {
-    if (a <= 0) {
+    bool isNonPositive;
+    float result;
+    float aMinus1;
+    float aPlus1;
+    float x;
+    float x2;
+    float num;
+    float denom;
+    float div;
+    bool condition;
+
+    isNonPositive = a <= 0;
+
+    if (isNonPositive) {
         dispatchError("Logarithm of a non-positive number", 0);
     }
 
-    float result = 0;
-    float x = (a - 1) / (a + 1);
-    float x2 = x * x;
-    float num = x2;
-    float denom = 1;
+    result = 0;
+    aMinus1 = a - 1;
+    aPlus1 = a + 1;
+    x = aMinus1 / aPlus1;
+    x2 = x * x;
+    num = x2;
+    denom = 1;
 
-    for (int i = 1; i <= 100; i += 2) {
-        result += num / denom;
-        num *= x2;
-        denom += 2;
-    }
+    int i = 1;
+    L1:
+    condition = i <= 100;
+    if (!condition) goto L2;
 
+    div = num / denom;
+    result = result + div;
+    num = num * x2;
+    denom = denom + 2;
+    i = i + 2;
+
+    goto L1;
+
+    L2:
     return 2.0f * result;
 }
 
+
 float exp(float a) {
-    float result = 1;
-    float num = 1;
-    float denom = 1;
+    float result;
+    float num;
+    float denom;
+    float div;
 
-    for (int i = 1; i <= 100; i++) {
-        result += num / denom;
-        num *= a;
-        denom *= i;
-    }
+    int i;
+    int condition;
 
+    result = 1;
+    num = 1;
+    denom = 1;
+    i = 1;
+
+    L1:
+    condition = i <= 100;
+    if (!condition) goto L2;
+
+    div = num / denom;
+    result = result + div;
+    num = num * a;
+    denom = denom * i;
+    i = i + 1;
+
+    goto L1;
+
+    L2:
     return result;
 }
 
+
+
 number pow(number a, number b) {
     number result;
+    result.isInteger = 0;
 
-    result.isInteger = false;
-    
     float base;
     float exponent;
 
-    if (a.isInteger) {
-        base = (float) a.value.integer;
-    } else {
-        base = a.value.real;
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int ifFlag3;
+    int ifFlag4;
+    int ifFlag5;
+    int ifFlag6;
+    int i;
 
-    if (b.isInteger) {
-        exponent = (float) b.value.integer;
-    } else {
-        exponent = b.value.real;
-    }
+    float res;
+    float positive;
+    int intPart;
+    float decimalPart;
+    float lnBase;
+    float expValue;
 
-    if (base == 0 && exponent == 0) {
-        dispatchError("0^0 is undefined", 0);
-    }
+    ifFlag1 = a.isInteger;
+    if (!ifFlag1) goto useRealBase;
+    base = (float) a.value.integer;
+    goto checkExponent;
 
-    if (base == 0) {
-        result.value.real = 0;
-        return result;
-    }
+useRealBase:
+    base = a.value.real;
 
-    if (exponent == 0) {
-        result.value.real = 1;
-        return result;
-    }
+checkExponent:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealExponent;
+    exponent = (float) b.value.integer;
+    goto checkBaseExponent;
 
-    float res = 1.0;
-    float positive = exponent > 0 ? exponent : -exponent;
-    int intPart = (int) positive;
-    float decimalPart = positive - intPart;
+useRealExponent:
+    exponent = b.value.real;
 
-    for (int i = 0; i < intPart; i++) {
-        res *= base;
-    }
+checkBaseExponent:
+    ifFlag3 = base == 0;
+    ifFlag4 = exponent == 0;
+    if (!ifFlag3) goto checkBaseZero;
+    if (!ifFlag4) goto checkBaseZero;
+    dispatchError("0^0 is undefined", 0);
 
-    if (decimalPart > 0) {
-        res *= exp(decimalPart * ln(base));
-    }
+checkBaseZero:
+    ifFlag5 = base == 0;
+    if (!ifFlag5) goto checkExponentZero;
+    result.value.real = 0;
+    return result;
 
-    if (exponent < 0) {
-        res = 1 / res;
-    }
+checkExponentZero:
+    ifFlag6 = exponent == 0;
+    if (!ifFlag6) goto calculatePower;
+    result.value.real = 1;
+    return result;
 
+calculatePower:
+    res = 1.0;
+    ifFlag6 = exponent > 0;
+    if (!ifFlag6) goto negateExponent;
+    positive = exponent;
+    goto calculateParts;
+
+negateExponent:
+    positive = -exponent;
+
+calculateParts:
+    intPart = (int) positive;
+    decimalPart = positive - intPart;
+
+    i = 0;
+calculateLoop:
+    ifFlag1 = i >= intPart;
+    if (ifFlag1) goto endLoop;
+    res = res * base;
+    i++;
+    goto calculateLoop;
+endLoop:
+
+    ifFlag4 = decimalPart > 0;
+    if (!ifFlag4) goto checkNegativeExponent;
+    lnBase = ln(base);
+    float resultExp;
+    resultExp = decimalPart * lnBase;
+    expValue = exp(resultExp);
+    res = res * expValue;
+
+checkNegativeExponent:
+    ifFlag4 = exponent < 0;
+    if (!ifFlag4) goto assignResult;
+    res = 1 / res;
+
+assignResult:
     result.value.real = res;
 
     return result;
 }
 
-number bitOr(number a, number b, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
 
-    if (!b.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+
+number bitOr(number a, number b, int currentLine) {
+    int ifFlag1;
+    int ifFlag2;
 
     number result;
 
+    ifFlag1 = !a.isInteger;
+    if (!ifFlag1) goto checkB;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+checkB:
+    ifFlag2 = !b.isInteger;
+    if (!ifFlag2) goto performOr;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performOr:
     result.value.integer = a.value.integer | b.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number bitAnd(number a, number b, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
-
-    if (!b.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+    int ifFlag1;
+    int ifFlag2;
 
     number result;
 
+    ifFlag1 = !a.isInteger;
+    if (!ifFlag1) goto checkB;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+checkB:
+    ifFlag2 = !b.isInteger;
+    if (!ifFlag2) goto performAnd;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performAnd:
     result.value.integer = a.value.integer & b.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number bitXor(number a, number b, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
-
-    if (!b.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+    int ifFlag1;
+    int ifFlag2;
 
     number result;
 
+    ifFlag1 = !a.isInteger;
+    if (!ifFlag1) goto checkB;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+checkB:
+    ifFlag2 = !b.isInteger;
+    if (!ifFlag2) goto performXor;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performXor:
     result.value.integer = a.value.integer ^ b.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number bitNot(number a, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+    int ifFlag;
 
     number result;
 
+    ifFlag = !a.isInteger;
+    if (!ifFlag) goto performNot;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performNot:
     result.value.integer = ~a.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number bitShiftLeft(number a, number b, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
-
-    if (!b.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+    int ifFlag1;
+    int ifFlag2;
 
     number result;
 
+    ifFlag1 = !a.isInteger;
+    if (!ifFlag1) goto checkB;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+checkB:
+    ifFlag2 = !b.isInteger;
+    if (!ifFlag2) goto performShift;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performShift:
     result.value.integer = a.value.integer << b.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number bitShiftRight(number a, number b, int currentLine) {
-    if (!a.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
-
-    if (!b.isInteger) {
-        dispatchError("Bitwise operations can only be performed on integers", currentLine);
-    }
+    int ifFlag1;
+    int ifFlag2;
 
     number result;
 
+    ifFlag1 = !a.isInteger;
+    if (!ifFlag1) goto checkB;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+checkB:
+    ifFlag2 = !b.isInteger;
+    if (!ifFlag2) goto performShift;
+
+    dispatchError("Bitwise operations can only be performed on integers", currentLine);
+
+performShift:
     result.value.integer = a.value.integer >> b.value.integer;
-    result.isInteger = true;
+    result.isInteger = 1;
 
     return result;
 }
+
 
 number intToFloat(number a) {
     if (!a.isInteger) return a;
@@ -539,96 +733,162 @@ number floatToInt(number a) {
 }
 
 int isGreaterThan(number a, number b) {
-    if (a.isInteger && b.isInteger) {
-        return a.value.integer > b.value.integer;
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int result;
 
     float f1;
     float f2;
 
-    if (a.isInteger) {
-        f1 = (float) a.value.integer;
-    } else {
-        f1 = a.value.real;
-    }
+    ifFlag1 = a.isInteger && b.isInteger;
+    if (!ifFlag1) goto notBothIntegers;
 
-    if (b.isInteger) {
-        f2 = (float) b.value.integer;
-    } else {
-        f2 = b.value.real;
-    }
+    result = a.value.integer > b.value.integer;
+    return result;
 
-    return f1 > f2;
+notBothIntegers:
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto useRealValueA;
+
+    f1 = (float) a.value.integer;
+    goto checkB;
+
+useRealValueA:
+    f1 = a.value.real;
+
+checkB:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealValueB;
+
+    f2 = (float) b.value.integer;
+    goto compareValues;
+
+useRealValueB:
+    f2 = b.value.real;
+
+compareValues:
+    result = f1 > f2;
+    return result;
 }
 
 int isLessThan(number a, number b) {
-    if (a.isInteger && b.isInteger) {
-        return a.value.integer < b.value.integer;
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int result;
 
     float f1;
     float f2;
 
-    if (a.isInteger) {
-        f1 = (float) a.value.integer;
-    } else {
-        f1 = a.value.real;
-    }
+    ifFlag1 = a.isInteger && b.isInteger;
+    if (!ifFlag1) goto notBothIntegers;
 
-    if (b.isInteger) {
-        f2 = (float) b.value.integer;
-    } else {
-        f2 = b.value.real;
-    }
+    result = a.value.integer < b.value.integer;
+    return result;
 
-    return f1 < f2;
+notBothIntegers:
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto useRealValueA;
+
+    f1 = (float) a.value.integer;
+    goto checkB;
+
+useRealValueA:
+    f1 = a.value.real;
+
+checkB:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealValueB;
+
+    f2 = (float) b.value.integer;
+    goto compareValues;
+
+useRealValueB:
+    f2 = b.value.real;
+
+compareValues:
+    result = f1 < f2;
+    return result;
 }
 
 int isGreaterThanOrEquals(number a, number b) {
-    if (a.isInteger && b.isInteger) {
-        return a.value.integer >= b.value.integer;
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int result;
 
     float f1;
     float f2;
 
-    if (a.isInteger) {
-        f1 = (float) a.value.integer;
-    } else {
-        f1 = a.value.real;
-    }
+    ifFlag1 = a.isInteger && b.isInteger;
+    if (!ifFlag1) goto notBothIntegers;
 
-    if (b.isInteger) {
-        f2 = (float) b.value.integer;
-    } else {
-        f2 = b.value.real;
-    }
+    result = a.value.integer >= b.value.integer;
+    return result;
 
-    return f1 >= f2;
+notBothIntegers:
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto useRealValueA;
+
+    f1 = (float) a.value.integer;
+    goto checkB;
+
+useRealValueA:
+    f1 = a.value.real;
+
+checkB:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealValueB;
+
+    f2 = (float) b.value.integer;
+    goto compareValues;
+
+useRealValueB:
+    f2 = b.value.real;
+
+compareValues:
+    result = f1 >= f2;
+    return result;
 }
+
 
 int isLessThanOrEquals(number a, number b) {
-    if (a.isInteger && b.isInteger) {
-        return a.value.integer <= b.value.integer;
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int result;
 
     float f1;
     float f2;
 
-    if (a.isInteger) {
-        f1 = (float) a.value.integer;
-    } else {
-        f1 = a.value.real;
-    }
+    ifFlag1 = a.isInteger && b.isInteger;
+    if (!ifFlag1) goto notBothIntegers;
 
-    if (b.isInteger) {
-        f2 = (float) b.value.integer;
-    } else {
-        f2 = b.value.real;
-    }
+    result = a.value.integer <= b.value.integer;
+    return result;
 
-    return f1 <= f2;
+notBothIntegers:
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto useRealValueA;
+
+    f1 = (float) a.value.integer;
+    goto checkB;
+
+useRealValueA:
+    f1 = a.value.real;
+
+checkB:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealValueB;
+
+    f2 = (float) b.value.integer;
+    goto compareValues;
+
+useRealValueB:
+    f2 = b.value.real;
+
+compareValues:
+    result = f1 <= f2;
+    return result;
 }
+
 
 char numberToChar(number a) {
     int i1;
@@ -661,31 +921,49 @@ endIf:
 }
 
 int isNumberEquals(number a, number b) {
-    if (a.isInteger == b.isInteger) {
-        if (a.isInteger) {
-            return a.value.integer == b.value.integer;
-        } else {
-            return a.value.real == b.value.real;
-        }
-    }
+    int ifFlag1;
+    int ifFlag2;
+    int result;
 
     float f1;
     float f2;
 
-    if (a.isInteger) {
-        f1 = (float) a.value.integer;
-    } else {
-        f1 = a.value.real;
-    }
+    ifFlag1 = (a.isInteger == b.isInteger);
+    if (!ifFlag1) goto notEqualType;
 
-    
-    if (b.isInteger) {
-        f2 = (float) b.value.integer;
-    } else {
-        f2 = b.value.real;
-    }
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto checkRealValues;
 
-    return f1 == f2;
+    result = (a.value.integer == b.value.integer);
+    return result;
+
+checkRealValues:
+    result = (a.value.real == b.value.real);
+    return result;
+
+notEqualType:
+    ifFlag2 = a.isInteger;
+    if (!ifFlag2) goto useRealValueA;
+
+    f1 = (float) a.value.integer;
+    goto checkB;
+
+useRealValueA:
+    f1 = a.value.real;
+
+checkB:
+    ifFlag2 = b.isInteger;
+    if (!ifFlag2) goto useRealValueB;
+
+    f2 = (float) b.value.integer;
+    goto compareValues;
+
+useRealValueB:
+    f2 = b.value.real;
+
+compareValues:
+    result = (f1 == f2);
+    return result;
 }
 
 String numberToString(number n) {
