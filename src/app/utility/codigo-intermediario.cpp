@@ -237,45 +237,50 @@ number multiply(number a, number b) {
     bool isNotBInteger = !isBInteger;
     bool eitherNotInteger = isNotAInteger || isNotBInteger;
 
-    if (eitherNotInteger) {
-        result.isInteger = false;
+    if (!eitherNotInteger) goto integerElse;
+    result.isInteger = false;
 
-        float f1;
-        float f2;
+    float f1;
+    float f2;
 
-        if (!isAInteger) {
-            f1 = a.value.real;
-        } else {
-            f1 = (float) a.value.integer;
-        }
+    if (isAInteger) goto isAIntegerGoto;
+        f1 = a.value.real;
+    goto fimIfAIntegerGoto;
+isAIntegerGoto:
+        f1 = (float) a.value.integer;
+fimIfAIntegerGoto:
 
-        if (!isBInteger) {
-            f2 = b.value.real;
-        } else {
-            f2 = (float) b.value.integer;
-        }
+    if (isBInteger) goto isBIntegerGoto;
+        f2 = b.value.real;
+    goto fimIfBIntegerGoto;
+isBIntegerGoto:
+        f2 = (float) b.value.integer;
+fimIfBIntegerGoto:
 
-        result.value.real = f1 * f2;
-    } else {
-        result.isInteger = true;
+    result.value.real = f1 * f2;
+    goto fimIf;
+integerElse:
+    result.isInteger = true;
 
-        int i1;
-        int i2;
+    int i1;
+    int i2;
 
-        if (!isAInteger) {
-            i1 = (int) a.value.real;
-        } else {
-            i1 = a.value.integer;
-        }
+    if (isAInteger) goto isAIntegerGoto2;
+        i1 = (int) a.value.real;
+    goto fimIfAIntegerGoto2;
+isAIntegerGoto2:
+        i1 = a.value.integer;
+fimIfAIntegerGoto2:
 
-        if (!isBInteger) {
-            i2 = (int) b.value.real;
-        } else {
-            i2 = b.value.integer;
-        }
+    if (isBInteger) goto isBIntegerGoto2;
+        i2 = (int) b.value.real;
+    goto fimIfBIntegerGoto2;
+isBIntegerGoto2:
+        i2 = b.value.integer;
+fimIfBIntegerGoto2:
 
-        result.value.integer = i1 * i2;
-    }
+    result.value.integer = i1 * i2;
+fimIf:
 
     return result;
 }
@@ -291,45 +296,50 @@ number divide(number a, number b) {
     bool isNotBInteger = !isBInteger;
     bool eitherNotInteger = isNotAInteger || isNotBInteger;
 
-    if (eitherNotInteger) {
-        result.isInteger = false;
+    if (!eitherNotInteger) goto integerElse;
+    result.isInteger = false;
 
-        float f1;
-        float f2;
+    float f1;
+    float f2;
 
-        if (!isAInteger) {
-            f1 = a.value.real;
-        } else {
-            f1 = (float) a.value.integer;
-        }
+    if (isAInteger) goto isAIntegerGoto;
+        f1 = a.value.real;
+    goto fimIfAIntegerGoto;
+isAIntegerGoto:
+        f1 = (float) a.value.integer;
+fimIfAIntegerGoto:
 
-        if (!isBInteger) {
-            f2 = b.value.real;
-        } else {
-            f2 = (float) b.value.integer;
-        }
+    if (isBInteger) goto isBIntegerGoto;
+        f2 = b.value.real;
+    goto fimIfBIntegerGoto;
+isBIntegerGoto:
+        f2 = (float) b.value.integer;
+fimIfBIntegerGoto:
 
-        result.value.real = f1 / f2;
-    } else {
-        result.isInteger = true;
+    result.value.real = f1 / f2;
+    goto fimIf;
+integerElse:
+    result.isInteger = true;
 
-        int i1;
-        int i2;
+    int i1;
+    int i2;
 
-        if (!isAInteger) {
-            i1 = (int) a.value.real;
-        } else {
-            i1 = a.value.integer;
-        }
+    if (isAInteger) goto isAIntegerGoto2;
+        i1 = (int) a.value.real;
+    goto fimIfAIntegerGoto2;
+isAIntegerGoto2:
+        i1 = a.value.integer;
+fimIfAIntegerGoto2:
 
-        if (!isBInteger) {
-            i2 = (int) b.value.real;
-        } else {
-            i2 = b.value.integer;
-        }
+    if (isBInteger) goto isBIntegerGoto2;
+        i2 = (int) b.value.real;
+    goto fimIfBIntegerGoto2;
+isBIntegerGoto2:
+        i2 = b.value.integer;
+fimIfBIntegerGoto2:
 
-        result.value.integer = i1 / i2;
-    }
+    result.value.integer = i1 / i2;
+fimIf:
 
     return result;
 }
@@ -345,17 +355,19 @@ number divideInteger(number a, number b) {
     int i1;
     int i2;
 
-    if (!isAInteger) {
+    if (isAInteger) goto isAIntegerGoto;
         i1 = (int) a.value.real;
-    } else {
+    goto fimIfAIntegerGoto;
+isAIntegerGoto:
         i1 = a.value.integer;
-    }
+fimIfAIntegerGoto:
 
-    if (!isBInteger) {
+    if (isBInteger) goto isBIntegerGoto;
         i2 = (int) b.value.real;
-    } else {
+    goto fimIfBIntegerGoto;
+isBIntegerGoto:
         i2 = b.value.integer;
-    }
+fimIfBIntegerGoto:
 
     result.value.integer = i1 / i2;
 
@@ -370,9 +382,9 @@ number mod(number a, number b) {
     bool isNotBInteger = !isBInteger;
     bool eitherNotInteger = isNotAInteger || isNotBInteger;
 
-    if (eitherNotInteger) {
-        dispatchError("Modulus operator can only be performed on integers", 0);
-    }
+    if (!eitherNotInteger) goto isCorrectLabel;
+    dispatchError("Modulus operator can only be performed on integers", 0);
+isCorrectLabel:
 
     int div = a.value.integer / b.value.integer;
     int mult = div * b.value.integer;
@@ -403,9 +415,9 @@ float ln(float a) {
 
     isNonPositive = a <= 0;
 
-    if (isNonPositive) {
+    if (!isNonPositive) goto isCorrectLabel;
         dispatchError("Logarithm of a non-positive number", 0);
-    }
+    isCorrectLabel:
 
     result = 0;
     aMinus1 = a - 1;
