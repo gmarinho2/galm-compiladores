@@ -1,0 +1,4 @@
+assertEquals(typeof(1), "number")
+assertEquals(typeof(true), "bool")
+assertEquals(typeof('a'), "char")
+assertEquals(typeof("string"), "string")

@@ -20,15 +20,10 @@ namespace variaveis {
     typedef struct {
         string label;
         string type;
-        string details;
         string translation;
     } Atributo;
 
     string getType(Atributo atributo) {
-        if (atributo.type == NUMBER_ID) {
-            return atributo.details == REAL_NUMBER_ID ? REAL_NUMBER_DEFINITION : INTEGER_NUMBER_DEFINITION;
-        }
-
         return atributo.type;
     }
 
@@ -46,45 +41,23 @@ namespace variaveis {
     vector<string> utilitiesFunctionsFiles;
 
     string gerarCodigo(string codigo) {
-        utilitiesFunctionsFiles.push_back("intToString");
-        utilitiesFunctionsFiles.push_back("strCopy");
-        utilitiesFunctionsFiles.push_back("stringConcat");
-        utilitiesFunctionsFiles.push_back("strLen");
-        utilitiesFunctionsFiles.push_back("realToString");
-        utilitiesFunctionsFiles.push_back("isStringEquals");
-        int assertCount = countSubstring(codigo, "assert");
-
-        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n#include <string.h>\n\n";
-
-        compilador += "#define bool int\n";
-        compilador += "#define true 1\n";
-        compilador += "#define false 0\n\n";
-
-        compilador += "using namespace std;\n\n";
-
-        string protoTypes = "";
-        string protoTypesImpl = "";
-
         bool success = false;
+        string codigoIntermediario = readFileAsString("src/app/utility/codigo-intermediario.cpp", success);
 
-        for (int i = 0; i < utilitiesFunctionsFiles.size(); i++) {
-            string file = readFileAsString("src/app/utility/" + utilitiesFunctionsFiles[i] + ".c", success);
-
-            if (!success) {
-                cout << "Ocorreu um erro ao tentar abrir o arquivo de funções utilitárias" << endl;
-                cout << "Não foi possível carregar o arquivo " << utilitiesFunctionsFiles[i] << endl;
-                exit(1);
-            }
-
-            string protoType = split(file, " {")[0];
-
-            protoTypes += protoType + ";\n";
-            protoTypesImpl += file + "\n";
+        if (!success) {
+            cout << "Ocorreu um erro ao tentar abrir o arquivo de funções utilitárias" << endl;
+            cout << "Não foi possível carregar o arquivo codigo-intermediario.cpp" << endl;
+            exit(1);
         }
 
-        compilador += protoTypes + "\n";
+        vector<string> splitted = split(codigoIntermediario, "/* %%%%%%%%%%%%%%%%%%%%%%% */");
 
-        compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
+        string header = splitted[0];
+        string footer = splitted[1];
+
+        int assertCount = countSubstring(codigo, "assert");
+
+        string compilador = header;
 
         compilador += "\nint main(void) {\n";
 
@@ -118,9 +91,9 @@ namespace variaveis {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
-        compilador += "\treturn 0;\n}\n\n";
+        compilador += "\treturn 0;\n}";
 
-        compilador += protoTypesImpl;
+        compilador += footer;
 
         return compilador;
     }
@@ -135,20 +108,8 @@ namespace variaveis {
         return getContextStack()->findVariableByName(varName);
     }
 
-    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
-        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
-    }
-    
-    void createString(string strLabel, string &translation, string sizeStr = "") {
-        string sizeOfString = strLabel + STRING_SIZE_STR;
-        
-        Variable* var = findVariableByName("@" + sizeOfString);
-
-        if (var == NULL) {
-            createVariableIfNotExists("@" + sizeOfString, sizeOfString, NUMBER_ID, sizeStr, false, true);
-        }
-
-        translation += sizeOfString + " = " + sizeStr+ ";\n";
+    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
+        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isConst, isTemp);
     }
 
     bool isInterpretedAsNumeric(string type) {
@@ -156,7 +117,7 @@ namespace variaveis {
     }
 
     string toId(string typeId) {
-        if (typeId == "string") return "char*";
+        if (typeId == "string") return "String";
 
         return typeId;
     }

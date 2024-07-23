@@ -1,7 +1,2 @@
-let a: string = "teste"
-
-while (true) {
-    a = "teste"
-    println(a)
-    break
-}
+let a = `ola mundo ${2 + 2}$`
+println(a.length)
