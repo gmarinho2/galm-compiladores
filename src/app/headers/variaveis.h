@@ -57,7 +57,7 @@ namespace variaveis {
 
         int assertCount = countSubstring(codigo, "assert");
 
-        string compilador = header;
+        string compilador = simplifyCode ? "" : header;
 
         compilador += "\nint main(void) {\n";
 
@@ -87,13 +87,13 @@ namespace variaveis {
 
         compilador += "\n" + codigo;
 
-        if (assertCount > 0) {
+        if (assertCount > 0 && testMode) {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
         compilador += "\treturn 0;\n}";
 
-        compilador += footer;
+        compilador += simplifyCode ? "" : footer;
 
         return compilador;
     }

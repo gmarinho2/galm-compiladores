@@ -40,7 +40,7 @@ print("The project has been compiled successfully\nStarting the tests:\n")
 for file in test_files:
 
     print(f"Creating intermediate code (c++) {file}...")
-    result = os.system(f"./output/compiler.exe < examples/{file} > {test_path}/{file}.cpp")
+    result = os.system(f"./output/compiler.exe --t < examples/{file} > {test_path}/{file}.cpp")
 
     if (result != 0):
         os.rename(f"{test_path}/{file}.cpp", f"{test_path}/{file}.err")

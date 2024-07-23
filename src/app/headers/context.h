@@ -14,6 +14,9 @@ namespace context {
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
 
+    bool simplifyCode = false;
+    bool testMode = false;
+
     bool isVoid(string voidString) {
         return voidString == VOID_ID || voidString == "void*";
     }
@@ -440,7 +443,18 @@ namespace context {
 
     ContextStack* contextStack = new ContextStack();
 
-    void init() {
+    void init(int argc, char* argv[]) {
+
+        if (argc > 1) {
+            for (int i = 1; i < argc; i++) {
+                if (strcmp(argv[i], "--s") == 0) {
+                    simplifyCode = true;
+                } else if (strcmp(argv[i], "--t") == 0) {
+                    testMode = true;
+                }
+            }
+        }
+
         Context* globalContext = new Context();
         contextStack->push(globalContext);
     }

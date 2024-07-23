@@ -527,6 +527,10 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
 
                         $$.type = VOID_ID;
                         $$.translation = translation;
+
+                        if (!testMode) {
+                            $$.translation = "";
+                        }
                     }
                     | EXPRESSION '.' TK_LENGTH {
                         if ($1.type != STRING_ID) {
@@ -1305,7 +1309,7 @@ int yyparse();
 
 int main(int argc, char* argv[])
 {
-    init();
+    init(argc, argv);
 	yyparse();
 	return 0;
 }
