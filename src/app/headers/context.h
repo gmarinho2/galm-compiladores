@@ -10,12 +10,20 @@ namespace context {
 
     const string NUMBER_ID = "number";
     const string BOOLEAN_ID = "bool";
-    const string STRING_ID = "String";
+    const string STRING_ID = "string";
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
 
     bool isVoid(string voidString) {
         return voidString == VOID_ID || voidString == "void*";
+    }
+
+    string getRealTypeName(string type) {
+        if (type == "string") {
+            return "String";
+        }
+
+        return type;
     }
 
     class Variable {
@@ -80,7 +88,7 @@ namespace context {
             }
 
             string getTranslation() {
-                return getVarType() + " " + varLabel;
+                return getRealTypeName(getVarType()) + " " + varLabel;
             }
 
             bool isNumber() {

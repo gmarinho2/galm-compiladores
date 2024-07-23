@@ -17,8 +17,7 @@ CHAR \'({LETTER}|{DIGIT})\'
 STRING \"(\\.|[^"\\])*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 
-TYPES "number"|"bool"|"char"|"string"
-OTHER_TYPES "void"|"null"
+TYPES "number"|"bool"|"char"|"string"|"void"
 
 %option stack
 %s SC_PROGRAM
@@ -55,7 +54,9 @@ OTHER_TYPES "void"|"null"
             
 "true"               { yylval.label = "true"; return TK_BOOLEAN;                     }
 "false"              { yylval.label = "false"; return TK_BOOLEAN;                    }
-       
+
+"like"               { return TK_LIKE;                                               }
+
 "and"                { return TK_AND;                                                }
 "or"                 { return TK_OR;                                                 }
 "!"|"not"            { return TK_NOT;                                                }
@@ -94,12 +95,10 @@ OTHER_TYPES "void"|"null"
 [+\-*/|\"]           { return *yytext;                                               }
 [(){}[\]]            { return *yytext;                                               }
 [;,~:=%_]            { return *yytext;                                               }
-      
-("("{TYPES}")")*     { yylval.label = yytext; return TK_AS;                          }
-{TYPES}("[]")*       { yylval.label = toId(yytext); return TK_TYPE;                  }
-{OTHER_TYPES}        { yylval.label = yytext; return TK_TYPE;                        }
-        
-"as"                 { return TK_AS;                                                 }
+
+"str"                { yylval.label = "string"; return TK_TYPE;                      }
+{TYPES}              { yylval.label = yytext; return TK_TYPE;                        } 
+
 {STRING}             { yylval.label = yytext; return TK_STRING;                      }
 {CHAR}		           { yylval.label = yytext; return TK_CHAR;                        }
         

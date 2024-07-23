@@ -1,5 +1,5 @@
-let str = "Hello"
-let stringInterpol = `${str}$ world!`
+let str1 = "Hello"
+let stringInterpol = `${str1}$ world!`
 
 let boolean = true
 let numb = 1
@@ -21,7 +21,7 @@ assertEquals(variavelManeira.length, 10)
 assertEquals("123asokdoasdstephen curry", str8)
 assertEquals(str8.length, 25)
 
-assertEquals(str, "Hello")
+assertEquals(str1, "Hello")
 assertEquals(stringInterpol, "Hello world!")
 assertEquals(superInterpol, "true 1 c")
 assertEquals(concat, "true 1 c")

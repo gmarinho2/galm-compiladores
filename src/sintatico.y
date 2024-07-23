@@ -15,7 +15,7 @@ int yylex(void);
 
 %token TK_BREAK_LINE TK_ASSERT_EQUALS
 
-%token TK_ID TK_INTEGER TK_INTEGER_BASE TK_REAL TK_AS
+%token TK_ID TK_INTEGER TK_INTEGER_BASE TK_REAL TK_LIKE
 
 %token TK_CHAR TK_STRING TK_INTER_STRING TK_INTER_START TK_INTER_END TK_LENGTH
 
@@ -38,7 +38,7 @@ int yylex(void);
 %start S
 
 %right '='
-%right TK_AS
+%right TK_LIKE
 
 %left TK_AND
 %left TK_OR
@@ -422,21 +422,19 @@ STRING_PIECE_LIST   : STRING_PIECE                         {
  * Explicit type casting
  */
 
-CAST                : TK_AS EXPRESSION {
-                        $1.label = toId($1.label.substr(1, $1.label.find(")") - 1));
-
+CAST                : EXPRESSION TK_LIKE TK_TYPE {
                         string translation = "";
 
                         $$.label = gentempcode();
-                        $$.type = $1.label;
+                        $$.type = $3.label;
 
-                        string tLabel = translate($2, translation, $1.label);
+                        string tLabel = translate($1, translation, $$.type);
 
                         createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
 
                         translation += $$.label + " = " + tLabel + ";\n";
 
-                        $$.translation = $2.translation + translation;
+                        $$.translation = $1.translation + translation;
                     }
 
  

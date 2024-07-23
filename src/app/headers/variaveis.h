@@ -116,10 +116,4 @@ namespace variaveis {
         return type == NUMBER_ID || type == CHAR_ID || type == BOOLEAN_ID;
     }
 
-    string toId(string typeId) {
-        if (typeId == "string") return "String";
-
-        return typeId;
-    }
-
 };

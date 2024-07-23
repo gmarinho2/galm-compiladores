@@ -906,7 +906,6 @@ char numberToChar(number a) {
     int i1;
 
     if (a.isInteger) goto integerIf;
-
 floatIf:
     i1 = (int) a.value.real;
     goto endIf;

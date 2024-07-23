@@ -1,2 +1,27 @@
-let a = `ola mundo ${2 + 2}$`
-println(a.length)
+let str1 = "Hello"
+let stringInterpol = `${str1}$ world!`
+
+let boolean = true
+let numb = 1
+let character = 'c'
+
+let superInterpol = `${boolean}$ ${numb}$ ${character}$`
+let concat = boolean <> " " <> numb <> " " <> character
+
+
+let str8 = "123" <> "asokdoasd" <> "stephen curry"
+
+let variavelManeira
+
+variavelManeira = "asdokaoskd"
+
+assertEquals("asdokaoskd", variavelManeira)
+assertEquals(variavelManeira.length, 10)
+
+assertEquals("123asokdoasdstephen curry", str8)
+assertEquals(str8.length, 25)
+
+assertEquals(str1, "Hello")
+assertEquals(stringInterpol, "Hello world!")
+assertEquals(superInterpol, "true 1 c")
+assertEquals(concat, "true 1 c")
