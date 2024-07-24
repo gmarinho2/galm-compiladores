@@ -16,19 +16,15 @@ namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
     unsigned long long int labelCounter = 0;
+    unsigned long long int functionCounter = 0;
 
     typedef struct {
         string label;
         string type;
-        string details;
         string translation;
     } Atributo;
 
     string getType(Atributo atributo) {
-        if (atributo.type == NUMBER_ID) {
-            return atributo.details == REAL_NUMBER_ID ? REAL_NUMBER_DEFINITION : INTEGER_NUMBER_DEFINITION;
-        }
-
         return atributo.type;
     }
 
@@ -39,57 +35,40 @@ namespace variaveis {
 
         return "t" + to_string(++tempCodeCounter);
     }
+
     string genlabelcode() {
         return "label_" + to_string(++labelCounter);
+    }
+
+    string genfunctioncode() {
+        return "f" + to_string(++functionCounter);
     }
 
     vector<string> utilitiesFunctionsFiles;
 
     string gerarCodigo(string codigo) {
-        utilitiesFunctionsFiles.push_back("intToString");
-        utilitiesFunctionsFiles.push_back("strCopy");
-        utilitiesFunctionsFiles.push_back("stringConcat");
-        utilitiesFunctionsFiles.push_back("strLen");
-        utilitiesFunctionsFiles.push_back("realToString");
-        utilitiesFunctionsFiles.push_back("isStringEquals");
-        int assertCount = countSubstring(codigo, "assert");
-
-        string compilador = "/* Compilador GALM */\n\n#include <iostream>\n#include <math.h>\n#include <string.h>\n\n";
-
-        compilador += "#define bool int\n";
-        compilador += "#define true 1\n";
-        compilador += "#define false 0\n\n";
-
-        compilador += "using namespace std;\n\n";
-
-        string protoTypes = "";
-        string protoTypesImpl = "";
-
         bool success = false;
+        string codigoIntermediario = readFileAsString("src/app/utility/codigo-intermediario.cpp", success);
 
-        for (int i = 0; i < utilitiesFunctionsFiles.size(); i++) {
-            string file = readFileAsString("src/app/utility/" + utilitiesFunctionsFiles[i] + ".c", success);
-
-            if (!success) {
-                cout << "Ocorreu um erro ao tentar abrir o arquivo de funções utilitárias" << endl;
-                cout << "Não foi possível carregar o arquivo " << utilitiesFunctionsFiles[i] << endl;
-                exit(1);
-            }
-
-            string protoType = split(file, " {")[0];
-
-            protoTypes += protoType + ";\n";
-            protoTypesImpl += file + "\n";
+        if (!success) {
+            cout << "Ocorreu um erro ao tentar abrir o arquivo de funções utilitárias" << endl;
+            cout << "Não foi possível carregar o arquivo codigo-intermediario.cpp" << endl;
+            exit(1);
         }
 
-        compilador += protoTypes + "\n";
+        vector<string> splitted = split(codigoIntermediario, "/* %%%%%%%%%%%%%%%%%%%%%%% */");
 
-        compilador += "typedef union {\n\t" + REAL_NUMBER_DEFINITION + " real;\n\t" + INTEGER_NUMBER_DEFINITION + " integer;\n} number;\n\n";
+        string header = splitted[0];
+        string footer = splitted[1];
 
-        compilador += "\nint main(void) {\n";
+        int assertCount = countSubstring(codigo, "assert");
+
+        string compilador = simplifyCode ? "" : header;
 
         list<Variable*> allVars = getAllVariables();
         bool hasTemp = false;
+
+        compilador += "\n/* User Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
@@ -99,28 +78,43 @@ namespace variaveis {
                 continue;
             }
 
-            compilador += "\t" + var->getTranslation() + ";\n";
+            compilador += var->getTranslation() + ";\n";
         }
 
         if (hasTemp)
-            compilador += "\n\t/* Variáveis Temporárias */\n\n";
+            compilador += "\n/* Compiler Temporary Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
 
             if (var->isTemp())
-                compilador += "\t" + var->getTranslation() + ";\n";
+                compilador += var->getTranslation() + ";\n";
         }
 
-        compilador += "\n" + codigo;
+        ContextStack *contextStack = getContextStack();
+        list<Function*> allFuncs = contextStack->getFunctions();
 
-        if (assertCount > 0) {
+        if (contextStack->getFunctions().size() > 0) {
+            compilador += "\n/* Functions */\n\n";
+
+            for (list<Function*>::iterator it = allFuncs.begin(); it != allFuncs.end(); ++it) {
+                Function* func = *it;
+
+                compilador += func->getDeclaration() + "\n";
+            }
+        }
+
+        compilador += "\nint main(void) {\n";
+
+        compilador += codigo;
+
+        if (assertCount > 0 && testMode) {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
-        compilador += "\treturn 0;\n}\n\n";
+        compilador += "\treturn 0;\n}";
 
-        compilador += protoTypesImpl;
+        compilador += simplifyCode ? "" : footer;
 
         return compilador;
     }
@@ -132,33 +126,31 @@ namespace variaveis {
      */
 
     Variable* findVariableByName(string varName) {
-        return getContextStack()->findVariableByName(varName);
-    }
+        ContextStack* stack = getContextStack();
 
-    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isReal = false, bool isConst = false, bool isTemp = false) {
-        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isReal, isConst, isTemp);
-    }
-    
-    void createString(string strLabel, string &translation, string sizeStr = "") {
-        string sizeOfString = strLabel + STRING_SIZE_STR;
-        
-        Variable* var = findVariableByName("@" + sizeOfString);
+        Function* creationFunction = topFunctionStack();
 
-        if (var == NULL) {
-            createVariableIfNotExists("@" + sizeOfString, sizeOfString, NUMBER_ID, sizeStr, false, true);
+        if (creationFunction != NULL) {
+            Parameter* param = creationFunction->findParameterByName(varName);
+
+            if (param != NULL) {
+                return new Variable(param->getName(), param->getNickname(), param->getType(), "", true, false);
+            }
         }
 
-        translation += sizeOfString + " = " + sizeStr+ ";\n";
+        return stack->findVariableByName(varName);
+    }
+
+    Function* findFunction(string functionName, string types) {
+        return getContextStack()->findFunction(functionName, types);
+    }
+
+    Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
+        return getContextStack()->createVariableIfNotExists(varName, varLabel, varType, varValue, isConst, isTemp);
     }
 
     bool isInterpretedAsNumeric(string type) {
         return type == NUMBER_ID || type == CHAR_ID || type == BOOLEAN_ID;
-    }
-
-    string toId(string typeId) {
-        if (typeId == "string") return "char*";
-
-        return typeId;
     }
 
 };

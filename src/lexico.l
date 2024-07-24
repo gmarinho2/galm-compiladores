@@ -17,8 +17,7 @@ CHAR \'({LETTER}|{DIGIT})\'
 STRING \"(\\.|[^"\\])*\"
 ID ({LETTER}|{UNDERSCORE})({LETTER}|{DIGIT}|{UNDERSCORE})*
 
-TYPES "number"|"bool"|"char"|"string"
-OTHER_TYPES "void"|"null"
+TYPES "number"|"bool"|"char"|"string"|"void"
 
 %option stack
 %s SC_PROGRAM
@@ -32,6 +31,8 @@ OTHER_TYPES "void"|"null"
 "assertEquals"       { return TK_ASSERT_EQUALS;                                      }
 "println"            { return TK_PRINTLN;                                            }
 "print"              { return TK_PRINT;                                              }
+"scan"               { return TK_SCAN;                                               }
+"typeof"             { return TK_TYPEOF;                                             }
 "length"             { return TK_LENGTH;                                             }
        
 "do"                 { return TK_DO;                                                 }
@@ -47,13 +48,16 @@ OTHER_TYPES "void"|"null"
 "if"                 { return TK_IF;                                                 }
 "else"               { return TK_ELSE;                                               }
        
+"return"             { return TK_RETURN;                                             }
 "fn"                 { return TK_FUNCTION;                                           }
 "let"                { return TK_LET;                                                }
 "const"              { return TK_CONST;                                              }
             
 "true"               { yylval.label = "true"; return TK_BOOLEAN;                     }
 "false"              { yylval.label = "false"; return TK_BOOLEAN;                    }
-       
+
+"like"               { return TK_LIKE;                                               }
+
 "and"                { return TK_AND;                                                }
 "or"                 { return TK_OR;                                                 }
 "!"|"not"            { return TK_NOT;                                                }
@@ -64,7 +68,9 @@ OTHER_TYPES "void"|"null"
 "^"                  { return TK_BITXOR;                                             }
 "<<"                 { return TK_BITLEFT;                                            }
 ">>"                 { return TK_BITRIGHT;                                           }
-       
+
+"+="                 { return TK_PLUS_EQUALS;                                        }
+"-="                 { return TK_MINUS_EQUALS;                                       }
 "=="                 { return TK_EQUALS;                                             }
 "!="                 { return TK_DIFFERENT;                                          }
 ">="                 { return TK_GREATER_EQUALS;                                     }
@@ -92,12 +98,18 @@ OTHER_TYPES "void"|"null"
 [+\-*/|\"]           { return *yytext;                                               }
 [(){}[\]]            { return *yytext;                                               }
 [;,~:=%_]            { return *yytext;                                               }
-      
-("("{TYPES}")")*     { yylval.label = yytext; return TK_AS;                          }
-{TYPES}("[]")*       { yylval.label = toId(yytext); return TK_TYPE;                  }
-{OTHER_TYPES}        { yylval.label = yytext; return TK_TYPE;                        }
-        
-"as"                 { return TK_AS;                                                 }
+
+"int"                { yylval.label = "int"; return TK_INT;                          }
+"float"              { yylval.label = "float"; return TK_FLOAT;                      }
+
+"array<str>"         { yylval.label = "StringArray"; return TK_TYPE;                 }
+"array<string>"      { yylval.label = "StringArray"; return TK_TYPE;                 }
+"array<number>"      { yylval.label = "NumberArray"; return TK_TYPE;                 }
+"array<bool>"        { yylval.label = "BoolArray"; return TK_TYPE;                   }
+"array<char>"        { yylval.label = "CharArray"; return TK_TYPE;                   }
+"str"                { yylval.label = "string"; return TK_TYPE;                      }
+{TYPES}              { yylval.label = yytext; return TK_TYPE;                        } 
+
 {STRING}             { yylval.label = yytext; return TK_STRING;                      }
 {CHAR}		           { yylval.label = yytext; return TK_CHAR;                        }
         
