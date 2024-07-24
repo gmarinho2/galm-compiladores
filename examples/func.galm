@@ -1,5 +1,5 @@
-fn soma(a: number, b: number) {
-    return a + b;
+fn soma(a: array<str>) {
+    return ["asdasdok"];
 }
 
-println(soma(1, 2));
+soma(["asdoaksd"]);

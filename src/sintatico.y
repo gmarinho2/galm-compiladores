@@ -947,7 +947,7 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         }
                     }
 
-ARGUMENT_LIST       : ARGUMENTS { $$ = $1; } | {}
+ARGUMENT_LIST       : ARGUMENTS { $$ = $1; } | { $$.label = ""; }
 
 ARGUMENTS           : EXPRESSION { $$ = $1; }
                     | ARGUMENTS ',' EXPRESSION { 

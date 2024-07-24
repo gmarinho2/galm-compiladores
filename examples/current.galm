@@ -1,4 +1,5 @@
-let a = 1;
+fn soma(a: array<str>) {
+    return ["asdasdok"];
+}
 
-let c = float(a);
-let d = int(c);
+soma(["asdoaksd"]);
