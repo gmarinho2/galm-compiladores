@@ -68,7 +68,9 @@ TYPES "number"|"bool"|"char"|"string"|"void"
 "^"                  { return TK_BITXOR;                                             }
 "<<"                 { return TK_BITLEFT;                                            }
 ">>"                 { return TK_BITRIGHT;                                           }
-       
+
+"+="                 { return TK_PLUS_EQUALS;                                        }
+"-="                 { return TK_MINUS_EQUALS;                                       }
 "=="                 { return TK_EQUALS;                                             }
 "!="                 { return TK_DIFFERENT;                                          }
 ">="                 { return TK_GREATER_EQUALS;                                     }
@@ -96,6 +98,9 @@ TYPES "number"|"bool"|"char"|"string"|"void"
 [+\-*/|\"]           { return *yytext;                                               }
 [(){}[\]]            { return *yytext;                                               }
 [;,~:=%_]            { return *yytext;                                               }
+
+"int"                { yylval.label = "int"; return TK_INT;                          }
+"float"              { yylval.label = "float"; return TK_FLOAT;                      }
 
 "array<str>"         { yylval.label = "StringArray"; return TK_TYPE;                 }
 "array<string>"      { yylval.label = "StringArray"; return TK_TYPE;                 }

@@ -34,10 +34,13 @@ int yylex(void);
 %token TK_PRINTLN TK_PRINT TK_SCAN TK_TYPEOF
 
 %token TK_ARROW TK_SWITCH TK_BREAK TK_CONTINUE
+%token TK_PLUS_EQUALS TK_MINUS_EQUALS
+
+%token TK_INT TK_FLOAT
 
 %start S
 
-%right '='
+%right '=' TK_PLUS_EQUALS TK_MINUS_EQUALS
 %right TK_LIKE
 
 %left TK_AND
@@ -400,6 +403,62 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
                         }
 
                         $$.translation = translation;
+                    }
+                    | TK_ID TK_PLUS_EQUALS EXPRESSION {
+                        Variable* variavel = findVariableByName($1.label);
+
+                        if (variavel == NULL) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
+
+                        if (variavel->isConstant()) {
+                            yyerror("Cannot reassign value to constant variable");
+                            return -1;
+                        }
+
+                        if (variavel->getVarType() != $3.type) {
+                            yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel->getVarType() + ")");
+                            return -1;
+                        }
+
+                        if (variavel->getVarType() != NUMBER_ID) {
+                            yyerror("The operator += can only be used with numbers");
+                            return -1;
+                        }
+
+                        $$.label = variavel->getRealVarLabel();
+                        $$.type = variavel->getVarType();
+
+                        $$.translation += $3.translation + $$.label + " = sum(" + $$.label + ", " + $3.label + ");\n";
+                    }
+                    | TK_ID TK_MINUS_EQUALS EXPRESSION {
+                        Variable* variavel = findVariableByName($1.label);
+
+                        if (variavel == NULL) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
+
+                        if (variavel->isConstant()) {
+                            yyerror("Cannot reassign value to constant variable");
+                            return -1;
+                        }
+
+                        if (variavel->getVarType() != $3.type) {
+                            yyerror("The type of the expression (" + $3.type + ") is not compatible with the type of the variable (" + variavel->getVarType() + ")");
+                            return -1;
+                        }
+
+                        if (variavel->getVarType() != NUMBER_ID) {
+                            yyerror("The operator -= can only be used with numbers");
+                            return -1;
+                        }
+
+                        $$.label = variavel->getRealVarLabel();
+                        $$.type = variavel->getVarType();
+
+                        $$.translation += $3.translation + $$.label + " = substract(" + $$.label + ", " + $3.label + ");\n";
                     }
                     | TK_ID ARRAY_SELECTOR '=' EXPRESSION {
                         Variable* variavel = findVariableByName($1.label);
@@ -808,6 +867,32 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                         if (!testMode) {
                             $$.translation = "";
                         }
+                    }
+                    | TK_INT '(' EXPRESSION ')' {
+                        if ($3.type != NUMBER_ID) {
+                            yyerror("The int function must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
+
+                        $$.translation = $3.translation + $$.label + " = floatToInt(" + $3.label + ");\n";
+                    }
+                    | TK_FLOAT '(' EXPRESSION ')' {
+                        if ($3.type != NUMBER_ID) {
+                            yyerror("The int function must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
+
+                        $$.translation = $3.translation + $$.label + " = intToFloat(" + $3.label + ");\n";
                     }
                     | TK_LENGTH '(' EXPRESSION ')' {
                         if ($3.type != STRING_ID && !isArray($3.type)) {

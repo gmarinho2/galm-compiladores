@@ -1,0 +1,5 @@
+fn soma(a: number, b: number) {
+    return a + b;
+}
+
+println(soma(1, 2));
