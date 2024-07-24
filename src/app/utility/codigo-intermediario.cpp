@@ -64,6 +64,11 @@ typedef struct {
     int* dimensions;
 } CharArray;
 
+typedef struct {
+    void* array;
+    int* dimensions;
+} VoidArray;
+
 void dispatchError(string message, int currentLine);
 
 number sum(number a, number b);
@@ -104,6 +109,7 @@ int strLen(char *str);
 
 int calculateArrayTotalSize(int* dimensions);
 int calculateArrayIndex(int* dimensions, int* indexes, int currentLine);
+NumberArray getArrayLength(int* dimensions);
 
 String readInput();
 
@@ -1185,13 +1191,54 @@ endFor:
     dispatchError("Array index out of bounds (negative number)", currentLine);
 positiveIndex:
 
-    int maxIndex = calculateArrayTotalSize(dimensions);
+    int maxIndex;
+
+    maxIndex = calculateArrayTotalSize(dimensions);
 
     if (index < maxIndex) goto indexInBounds;
     dispatchError("Array index out of bounds (exceed maximum index)", currentLine);
 indexInBounds:
 
     return index;
+}
+
+NumberArray getArrayLength(int* dimensions) {
+    int dimensionsLength;
+
+    NumberArray numberArray;
+    int totalDimensions;
+    int sizeOfSum;
+    int twoSizeOfSum;
+
+    dimensionsLength = dimensions[0];
+    totalDimensions = dimensionsLength + 1;
+    sizeOfSum = totalDimensions * sizeof(int);
+    twoSizeOfSum = 2 * sizeof(int);
+
+    numberArray.array = (number*) malloc(sizeOfSum);
+    numberArray.dimensions = (int*) malloc(twoSizeOfSum);
+
+    numberArray.array[0].isInteger = true;
+    numberArray.array[0].value.integer = dimensionsLength;
+    
+    numberArray.dimensions[0] = 1;
+    numberArray.dimensions[1] = totalDimensions;
+
+    int i;
+    int ifFlag;
+
+    i = 1;
+
+startFor:
+    ifFlag = i <= dimensionsLength;
+    if (!ifFlag) goto endFor;
+    numberArray.array[i].isInteger = true;
+    numberArray.array[i].value.integer = dimensions[i];
+    i = i + 1;
+    goto startFor;
+endFor:
+    
+    return numberArray;
 }
 
 String readInput() {

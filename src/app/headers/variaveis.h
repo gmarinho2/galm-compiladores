@@ -16,6 +16,7 @@ namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
     unsigned long long int labelCounter = 0;
+    unsigned long long int functionCounter = 0;
 
     typedef struct {
         string label;
@@ -34,8 +35,13 @@ namespace variaveis {
 
         return "t" + to_string(++tempCodeCounter);
     }
+
     string genlabelcode() {
         return "label_" + to_string(++labelCounter);
+    }
+
+    string genfunctioncode() {
+        return "f" + to_string(++functionCounter);
     }
 
     vector<string> utilitiesFunctionsFiles;
@@ -85,6 +91,19 @@ namespace variaveis {
                 compilador += var->getTranslation() + ";\n";
         }
 
+        ContextStack *contextStack = getContextStack();
+        list<Function*> allFuncs = contextStack->getFunctions();
+
+        if (contextStack->getFunctions().size() > 0) {
+            compilador += "\n/* Functions */\n\n";
+
+            for (list<Function*>::iterator it = allFuncs.begin(); it != allFuncs.end(); ++it) {
+                Function* func = *it;
+
+                compilador += func->getDeclaration() + "\n";
+            }
+        }
+
         compilador += "\nint main(void) {\n";
 
         compilador += codigo;
@@ -107,7 +126,23 @@ namespace variaveis {
      */
 
     Variable* findVariableByName(string varName) {
-        return getContextStack()->findVariableByName(varName);
+        ContextStack* stack = getContextStack();
+
+        Function* creationFunction = topFunctionStack();
+
+        if (creationFunction != NULL) {
+            Parameter* param = creationFunction->findParameterByName(varName);
+
+            if (param != NULL) {
+                return new Variable(param->getName(), param->getNickname(), param->getType(), "", true, false);
+            }
+        }
+
+        return stack->findVariableByName(varName);
+    }
+
+    Function* findFunction(string functionName, string types) {
+        return getContextStack()->findFunction(functionName, types);
     }
 
     Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {

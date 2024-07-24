@@ -21,7 +21,7 @@ int yylex(void);
 
 %token TK_IF TK_ELSE TK_FOR TK_IN TK_WHILE TK_DO
 
-%token TK_LET TK_CONST TK_FUNCTION TK_TYPE TK_VOID
+%token TK_LET TK_CONST TK_FUNCTION TK_RETURN TK_TYPE TK_VOID
 
 %token TK_AND TK_OR TK_BOOLEAN TK_NOT
 
@@ -79,6 +79,8 @@ COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $
                     | VARIABLE_DECLARATION ';' { $$ = $1; }
                     | ASSIGNMENT ';' { $$ = $1; }
                     | FUNCTIONS ';' { $$ = $1; }
+                    | RETURN_COMMAND ';' { $$ = $1; }
+                    | FUNCTION_DECLARATION OPTIONAL_SEMICOLON { $$ = $1; }
                     | BREAK_COMMAND OPTIONAL_SEMICOLON { $$ = $1; }
                     | CONTINUE_COMMAND OPTIONAL_SEMICOLON { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
@@ -87,8 +89,7 @@ COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $
 OPTIONAL_SEMICOLON  : ';' {} | {}
 
 PUSH_NEW_CONTEXT    : '{' {
-                        Context *newContext = new Context();
-                        getContextStack()->push(newContext);
+                        createContext();
                     }
 
 POP_CONTEXT         : '}' {
@@ -269,7 +270,95 @@ CONST_VAR_DECLARTION: TK_ID RETURN_TYPE {
 
                         $$.translation = translation;
                     }
-                    
+
+RETURN_COMMAND      : TK_RETURN {
+                        Function* function = topFunctionStack();
+
+                        if (function == NULL) {
+                            yyerror("Cannot use return outside a function");
+                            return -1;
+                        }
+
+                        if (function->getReturnType() != VOID_ID) {
+                            yyerror("The function " + function->getName() + " must return a value");
+                            return -1;
+                        }
+
+                        $$.translation = "return;\n";
+                    }
+                    | TK_RETURN EXPRESSION {
+                        Function* function = topFunctionStack();
+
+                        if (function == NULL) {
+                            yyerror("Cannot use return outside a function");
+                            return -1;
+                        }
+
+                        if (function->getReturnType() != VOID_ID && function->getReturnType() != $2.type) {
+                            yyerror("The function " + function->getName() + " expects a return value of type " + function->getReturnType() + " and received " + $2.type);
+                            return -1;
+                        }
+
+                        if (function->getReturnType() == VOID_ID) {
+                            function->setReturnType($2.type);
+                        }
+
+                        Context* context = getContextStack()->top();
+
+                        context->setReturnType($2.type);
+                        context->setReturning(true);
+                        $$.translation = $2.translation + "return " + $2.label + ";\n";
+                    }
+
+START_FUNCTION      : TK_FUNCTION TK_ID {
+                        if (!isFunctionStackEmpty()) {
+                            yyerror("Cannot declare a function outside the global scope");
+                            return -1;
+                        }
+
+                        createContext(true);
+                        createFunction($2.label, genfunctioncode());
+                    }
+
+MIDDLE_FUNCTION     : '(' FUNCTION_PARAMETERS ')' RETURN_TYPE {
+                        Function* function = topFunctionStack();
+
+                        function->setReturnType($4.type);
+                    }
+
+FINISH_FUNCTION     : '{' COMMANDS '}' {
+                        Function* function = popFunctionStack();
+                        Context* context = getContextStack()->top();
+
+                        if (function->getReturnType() != context->getReturnType()) {
+                            yyerror("The function " + function->getName() + " must return a value of type " + function->getReturnType() + " and received " + context->getReturnType());
+                            return -1;
+                        }
+
+                        if (function->getReturnType() != VOID_ID && !context->isReturning()) {
+                            yyerror("The main context of the function " + function->getName() + " must return a value of type " + function->getReturnType());
+                            return -1;
+                        }
+
+                        function->setTranslation($2.translation);
+                        createFunction(function);
+                        getContextStack()->pop();
+                    }
+
+FUNCTION_DECLARATION: START_FUNCTION MIDDLE_FUNCTION FINISH_FUNCTION  {}
+
+FUNCTION_PARAMETERS : PARAMETERS { $$ = $1; } | {}
+
+PARAMETERS          : TK_ID ':' TK_TYPE { 
+                        Function *function = topFunctionStack();
+
+                        function->addParameter($1.label, $3.label);
+                    }
+                    | PARAMETERS ',' TK_ID ':' TK_TYPE { 
+                        Function *function = topFunctionStack();
+
+                        function->addParameter($3.label, $5.label);
+                    }
 
 ASSIGNMENT          : TK_ID '=' EXPRESSION {
                         Variable* variavel = findVariableByName($1.label);
@@ -311,7 +400,63 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
                         }
 
                         $$.translation = translation;
-                    };
+                    }
+                    | TK_ID ARRAY_SELECTOR '=' EXPRESSION {
+                        Variable* variavel = findVariableByName($1.label);
+
+                        if (variavel == NULL) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
+
+                        if (!variavel->isArray()) {
+                            yyerror("The variable " + $1.label + " is not an array");
+                            return -1;
+                        }
+
+                        if (getOriginalTypeFromArrayType(variavel->getVarType()) != $4.type) {
+                            yyerror("The type of the expression (" + $4.type + ") is not compatible with the type of the variable (" + getOriginalTypeFromArrayType(variavel->getVarType()) + ")");
+                            return -1;
+                        }
+
+                        if (variavel->isConstant()) {
+                            yyerror("Cannot reassign value to constant variable");
+                            return -1;
+                        }
+
+                        vector<string> stringIndexes = split($2.label, ", ");
+                        int size = stringIndexes.size();
+
+                        string sumSizeofNumber = gentempcode();
+                        string dimensionsArrayInteger = gentempcode();
+                        string indexInteger = gentempcode();
+
+                        $$.type = getOriginalTypeFromArrayType(variavel->getVarType());
+
+                        createVariableIfNotExists(sumSizeofNumber, sumSizeofNumber, "int", "", true, true);
+                        createVariableIfNotExists(dimensionsArrayInteger, dimensionsArrayInteger, "int*", "", true, true);
+                        createVariableIfNotExists(indexInteger, indexInteger, "int", "", true, true);
+
+                        $$.translation = $2.translation + $4.translation;
+                        $$.translation += sumSizeofNumber + " = sizeof(int) * " + to_string(size + 1) + ";\n";
+                        $$.translation += dimensionsArrayInteger + " = (int*) malloc(" + sumSizeofNumber + ");\n";
+
+                        $$.translation += dimensionsArrayInteger + "[0] = " + to_string(size) + ";\n";
+
+                        for (int i = 0; i < size; i++) {
+                            $$.translation += dimensionsArrayInteger + "[" + to_string(i + 1) + "] = getIntegerValueFromNumber(" + stringIndexes[i] + ", " + to_string(getCurrentLine()) + ");\n";
+                        }
+
+                        $$.translation += indexInteger + " = calculateArrayIndex(" + variavel->getRealVarLabel() + ".dimensions, " + dimensionsArrayInteger + ", " + to_string(getCurrentLine()) + ");\n";
+
+                        $$.label = variavel->getRealVarLabel() + ".array[" + indexInteger + "]";
+
+                        if ($$.type == STRING_ID) {
+                            $$.translation += $$.label + " = strCopy(" + $4.label + ");\n";
+                        } else {
+                            $$.translation += $$.label + " = " + $4.label + ";\n";
+                        }
+                    }
 
 /**
  * Types
@@ -603,19 +748,18 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
 
                         string translation = $3.translation;
 
-                        string label = translate($3, translation, STRING_ID);
-
                         createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
 
                         string originalString = toLowerCase($3.type);
+                        int stringSize = originalString.length();
 
-                        translation += $$.label + ".str = (char*) malloc(" + to_string(originalString.length()) + ");\n";
+                        translation += $$.label + ".str = (char*) malloc(" + to_string(stringSize) + ");\n";
 
                         for (int i = 0; i < originalString.length(); i++) {
                             translation += $$.label + ".str[" + to_string(i) + "] = '" + originalString[i] + "';\n";
                         }
 
-                        translation += $$.label + ".length = " + to_string($3.type.length()) + ";\n";
+                        translation += $$.label + ".length = " + to_string(stringSize) + ";\n";
 
                         $$.translation = $3.translation + translation;
                     }
@@ -665,20 +809,66 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                             $$.translation = "";
                         }
                     }
-                    | EXPRESSION '.' TK_LENGTH{
-                        if ($1.type != STRING_ID) {
-                            yyerror("The length operator must be used with a string type");
+                    | TK_LENGTH '(' EXPRESSION ')' {
+                        if ($3.type != STRING_ID && !isArray($3.type)) {
+                            yyerror("The length operator must be used with a string or array type");
                             return -1;
                         }
 
-                        $$.label = gentempcode();
-                        $$.type = NUMBER_ID;
+                        $$.translation = $3.translation;
+                        
+                        if ($3.type == STRING_ID) {
+                            $$.label = gentempcode();
+                            $$.type = NUMBER_ID;
 
-                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
 
-                        $$.translation = $1.translation;
-                        $$.translation += $$.label + ".value.integer = " + $1.label + ".length;\n";
-                        $$.translation += $$.label + ".isInteger = true;\n";
+                            $$.translation += $$.label + ".value.integer = " + $3.label + ".length;\n";
+                            $$.translation += $$.label + ".isInteger = true;\n";
+                        } else {
+                            $$.label = gentempcode();
+                            $$.type = ARRAY_NUMBER_ID;
+
+                            createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
+
+                            $$.translation += $$.label + " = getArrayLength(" + $3.label + ".dimensions);\n";
+                        }
+                    }
+                    | TK_ID '(' ARGUMENT_LIST ')' {
+                        Function* function = findFunction($1.label, $3.type);
+
+                        if (function == NULL) {
+                            if (empty($3.type) || split($3.type, ", ").size() == 0) {
+                                yyerror("Cannot found function \"" + $1.label + "\"");
+                            } else {
+                                yyerror("Cannot found function \"" + $1.label + "\" with the type(s) " + $3.type);
+                            }
+                            return -1;
+                        }
+
+                        string functionCall = function->getNickname() + "(" + $3.label + ");\n";
+
+                        $$.translation = $3.translation;
+
+                        if (function->getReturnType() == VOID_ID) {
+                            $$.translation += functionCall;
+                        } else {
+                            $$.label = gentempcode();
+                            $$.type = function->getReturnType();
+
+                            createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
+
+                            $$.translation += $$.label + " = " + functionCall;
+                        }
+                    }
+
+ARGUMENT_LIST       : ARGUMENTS { $$ = $1; } | {}
+
+ARGUMENTS           : EXPRESSION { $$ = $1; }
+                    | ARGUMENTS ',' EXPRESSION { 
+                        $$.label = $1.label + ", " + $3.label;
+                        $$.type = $1.type + ", " + $3.type;
+                        $$.translation = $1.translation + $3.translation;
                     }
 
 /**
@@ -1215,12 +1405,10 @@ START_DO_WHILE_TOKEN: TK_DO {
                     }
 
 START_FOR_TOKEN     : TK_FOR {
-                        Context* context = new Context();
-
                         string inicioForLabel = genlabelcode();
                         string fimForLabel = genlabelcode();
 
-                        getContextStack()->push(context);
+                        Context* context = createContext();
                         context->createEndableStatement(inicioForLabel, fimForLabel);
 
                         $$.label = inicioForLabel + " " + fimForLabel;

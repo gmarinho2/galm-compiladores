@@ -48,6 +48,7 @@ TYPES "number"|"bool"|"char"|"string"|"void"
 "if"                 { return TK_IF;                                                 }
 "else"               { return TK_ELSE;                                               }
        
+"return"             { return TK_RETURN;                                             }
 "fn"                 { return TK_FUNCTION;                                           }
 "let"                { return TK_LET;                                                }
 "const"              { return TK_CONST;                                              }
@@ -96,6 +97,11 @@ TYPES "number"|"bool"|"char"|"string"|"void"
 [(){}[\]]            { return *yytext;                                               }
 [;,~:=%_]            { return *yytext;                                               }
 
+"array<str>"         { yylval.label = "StringArray"; return TK_TYPE;                 }
+"array<string>"      { yylval.label = "StringArray"; return TK_TYPE;                 }
+"array<number>"      { yylval.label = "NumberArray"; return TK_TYPE;                 }
+"array<bool>"        { yylval.label = "BoolArray"; return TK_TYPE;                   }
+"array<char>"        { yylval.label = "CharArray"; return TK_TYPE;                   }
 "str"                { yylval.label = "string"; return TK_TYPE;                      }
 {TYPES}              { yylval.label = yytext; return TK_TYPE;                        } 
 

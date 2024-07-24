@@ -16,10 +16,10 @@ let variavelManeira;
 variavelManeira = "asdokaoskd";
 
 assertEquals("asdokaoskd", variavelManeira);
-assertEquals(variavelManeira.length, 10);
+assertEquals(length(variavelManeira), 10);
 
 assertEquals("123asokdoasdstephen curry", str8);
-assertEquals(str8.length, 25);
+assertEquals(length(str8), 25);
 
 assertEquals(str1, "Hello");
 assertEquals(stringInterpol, "Hello world!");
