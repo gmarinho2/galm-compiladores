@@ -266,7 +266,6 @@ Caso o valor resultado esteja sendo representado por um **X** significa que a co
 
 ## Contextos para variáveis e funções
 ## Funções
-## Pipe operator
 
 # Testes
 
