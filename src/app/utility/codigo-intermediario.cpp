@@ -86,6 +86,8 @@ number bitNot(number a, int currentLine);
 number bitShiftLeft(number a, number b, int currentLine);
 number bitShiftRight(number a, number b, int currentLine);
 
+number negative(number a);
+
 int getIntegerValueFromNumber(number a, int currentLine);
 
 int isGreaterThan(number a, number b);
@@ -752,6 +754,20 @@ performShift:
     return result;
 }
 
+number negative(number a) {
+    number result;
+
+    if (a.isInteger) goto isIntegerIf;
+    result.isInteger = false;
+    result.value.real = -a.value.real;
+    goto endIf;
+isIntegerIf:
+    result.isInteger = true;
+    result.value.integer = -a.value.integer;
+endIf:
+    
+    return result;
+}   
 
 number intToFloat(number a) {
     if (!a.isInteger) return a;

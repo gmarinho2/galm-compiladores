@@ -985,6 +985,26 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
 
                         $$.translation = $2.translation + $$.label + " = absolute(" + $3.label + ");\n";
                     }
+                    | '-' EXPRESSION {
+                        if ($2.type != NUMBER_ID) {
+                            yyerror("The operator - must be used with a number type");
+                            return -1;
+                        }
+
+                        $$.label = gentempcode();
+                        $$.type = NUMBER_ID;
+                        createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
+
+                        $$.translation = $2.translation + $$.label + " = negative(" + $2.label + ");\n";
+                    }
+                    | '+' EXPRESSION {
+                        if ($2.type != NUMBER_ID) {
+                            yyerror("The operator - must be used with a number type");
+                            return -1;
+                        }
+
+                        $$ = $2;
+                    }
 
 /**
  * Logical expressions
