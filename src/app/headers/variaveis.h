@@ -59,10 +59,10 @@ namespace variaveis {
 
         string compilador = simplifyCode ? "" : header;
 
-        compilador += "\nint main(void) {\n";
-
         list<Variable*> allVars = getAllVariables();
         bool hasTemp = false;
+
+        compilador += "\n/* User Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
@@ -72,20 +72,22 @@ namespace variaveis {
                 continue;
             }
 
-            compilador += "\t" + var->getTranslation() + ";\n";
+            compilador += var->getTranslation() + ";\n";
         }
 
         if (hasTemp)
-            compilador += "\n\t/* Variáveis Temporárias */\n\n";
+            compilador += "\n/* Compiler Temporary Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
 
             if (var->isTemp())
-                compilador += "\t" + var->getTranslation() + ";\n";
+                compilador += var->getTranslation() + ";\n";
         }
 
-        compilador += "\n" + codigo;
+        compilador += "\nint main(void) {\n";
+
+        compilador += codigo;
 
         if (assertCount > 0 && testMode) {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";

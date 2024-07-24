@@ -76,13 +76,15 @@ COMMANDS            : COMMAND COMMANDS { $$.translation = $1.translation + $2.tr
                     | { $$.translation = ""; }
 
 COMMAND             : PUSH_NEW_CONTEXT COMMANDS POP_CONTEXT { $$.translation = $2.translation; }
-                    | VARIABLE_DECLARATION { $$ = $1; }
-                    | ASSIGNMENT { $$ = $1; }
-                    | FUNCTIONS { $$ = $1; }
+                    | VARIABLE_DECLARATION ';' { $$ = $1; }
+                    | ASSIGNMENT ';' { $$ = $1; }
+                    | FUNCTIONS ';' { $$ = $1; }
+                    | BREAK_COMMAND OPTIONAL_SEMICOLON { $$ = $1; }
+                    | CONTINUE_COMMAND OPTIONAL_SEMICOLON { $$ = $1; }
                     | CONDITIONALS { $$ = $1; }
-                    | BREAK_COMMAND { $$ = $1; }
-                    | CONTINUE_COMMAND { $$ = $1; }
                     | CONTROL_STRUCTURE { $$ = $1;}
+
+OPTIONAL_SEMICOLON  : ';' {} | {}
 
 PUSH_NEW_CONTEXT    : '{' {
                         Context *newContext = new Context();
@@ -128,6 +130,74 @@ PRIMARY             : TK_ID {
 
                         $$.label = var->getRealVarLabel();
                         $$.type = var->getVarType();
+                    }
+                    | TK_ID ARRAY_SELECTOR {
+                        Variable* var = findVariableByName($1.label);
+
+                        if (var == NULL) {
+                            yyerror("Cannot found symbol \"" + $1.label + "\"");
+                            return -1;
+                        }
+
+                        if (isVoid(var->getVarType())) {
+                            yyerror("The variable " + $1.label + " was not initialized yet");
+                            return -1;
+                        }
+
+                        if (!var->isArray()) {
+                            yyerror("The variable " + $1.label + " is not an array");
+                            return -1;
+                        }
+
+                        vector<string> stringIndexes = split($2.label, ", ");
+                        int size = stringIndexes.size();
+
+                        string sumSizeofNumber = gentempcode();
+                        string dimensionsArrayInteger = gentempcode();
+                        string indexInteger = gentempcode();
+
+                        $$.label = gentempcode();
+                        $$.type = getOriginalTypeFromArrayType(var->getVarType());
+
+                        createVariableIfNotExists(sumSizeofNumber, sumSizeofNumber, "int", "", true, true);
+                        createVariableIfNotExists(dimensionsArrayInteger, dimensionsArrayInteger, "int*", "", true, true);
+                        createVariableIfNotExists(indexInteger, indexInteger, "int", "", true, true);
+                        createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
+
+                        $$.translation = $2.translation;
+                        $$.translation += sumSizeofNumber + " = sizeof(int) * " + to_string(size + 1) + ";\n";
+                        $$.translation += dimensionsArrayInteger + " = (int*) malloc(" + sumSizeofNumber + ");\n";
+
+                        $$.translation += dimensionsArrayInteger + "[0] = " + to_string(size) + ";\n";
+
+                        for (int i = 0; i < size; i++) {
+                            $$.translation += dimensionsArrayInteger + "[" + to_string(i + 1) + "] = getIntegerValueFromNumber(" + stringIndexes[i] + ", " + to_string(getCurrentLine()) + ");\n";
+                        }
+
+                        $$.translation += indexInteger + " = calculateArrayIndex(" + var->getRealVarLabel() + ".dimensions, " + dimensionsArrayInteger + ", " + to_string(getCurrentLine()) + ");\n";
+
+                        $$.translation += $$.label + " = " + var->getRealVarLabel() + ".array[" + indexInteger + "];\n";
+                    }
+
+ARRAY_SELECTOR      : '[' EXPRESSION ']' {
+                        if ($2.type != NUMBER_ID) {
+                            yyerror("The array index must be a number");
+                            return -1;
+                        }
+
+                        $$.label = $2.label;
+                        $$.type = NUMBER_ID;
+                        $$.translation = $2.translation;
+                    }
+                    | ARRAY_SELECTOR '[' EXPRESSION ']'  {
+                        if ($3.type != NUMBER_ID) {
+                            yyerror("The array index must be a number");
+                            return -1;
+                        }
+                        
+                        $$.label = $1.label + ", " + $3.label;
+                        $$.type = NUMBER_ID;
+                        $$.translation = $1.translation + $3.translation;
                     }
 
 /**
@@ -369,6 +439,69 @@ ASSIGNMENT          : TK_ID '=' EXPRESSION {
 
                             $$.translation = translation;
                         }
+                        | ARRAY {
+                            $$ = $1;
+                        }
+
+START_ARRAY         : '[' {
+                        createArray();
+                    }
+
+FINISH_ARRAY        : ']' {
+                        Array* array = popArrayStack();
+
+                        if (isArrayStackEmpty()) {
+                            string sumSizeofNumber = gentempcode();
+                            string sumSizeofInt = gentempcode();
+
+                            createVariableIfNotExists(sumSizeofNumber, sumSizeofNumber, "int", "", true, true);
+                            createVariableIfNotExists(sumSizeofInt, sumSizeofInt, "int", "", true, true);
+
+                            $$.label = gentempcode();
+                            $$.type = getArrayTypeFromType(array->getType()); // se o tipo já for array, ele vai retornar o tipo do array
+                            $$.translation = array->getTranslation($$.label, sumSizeofNumber, sumSizeofInt);
+                            createVariableIfNotExists($$.label, $$.label, $$.type, "", true, true);
+                        } else {
+                            Array* parentArray = topArrayStack();
+
+                            string parentType = getArrayTypeFromType(array->getType());
+
+                            parentArray->addChild(array);
+                            parentArray->setType(parentType);
+                        }
+                    }
+
+ARRAY               : START_ARRAY ARRAY_VALUES FINISH_ARRAY {
+                        $$ = $3;
+                    }
+
+ARRAY_VALUES        : MULTIPLE_ARRAY_VALUES { } | { }
+
+MULTIPLE_ARRAY_VALUES: EXPRESSION {
+                        if (!empty($1.type)){
+                            Array* topArray = topArrayStack();
+
+                            if (topArray->getType() == VOID_ID) {
+                                topArray->setType(getArrayTypeFromType($1.type));
+                            }
+                            
+                            topArray->addLabel($1.label + " - " + $1.translation);
+                        }
+                    } 
+                    | MULTIPLE_ARRAY_VALUES ',' EXPRESSION {
+                        if (!empty($3.type)) {
+                            Array* topArray = topArrayStack();
+
+                            if (topArray->getChilds().size() == 0) {
+                                if (getOriginalTypeFromArrayType(topArray->getType()) != $3.type) {
+                                    yyerror("The array must have the same type for all elements (expected " + getOriginalTypeFromArrayType(topArray->getType()) + " and received " + $3.type + ")", "Mismatch type");
+                                    return -1;
+                                }
+                            }
+
+                            topArray->addLabel($3.label + " - " + $3.translation);
+                        }
+                    }
 
 STRING_INTERPOL     : '`' STRING_PIECE '`'                 { 
                         $$ = $2;
@@ -532,7 +665,7 @@ FUNCTIONS           : TK_PRINTLN '(' EXPRESSION ')' {
                             $$.translation = "";
                         }
                     }
-                    | EXPRESSION '.' TK_LENGTH {
+                    | EXPRESSION '.' TK_LENGTH{
                         if ($1.type != STRING_ID) {
                             yyerror("The length operator must be used with a string type");
                             return -1;
@@ -659,27 +792,6 @@ STRING_CONCAT       : EXPRESSION TK_CONCAT EXPRESSION {
                             yyerror("The operador absolute must be used with a number type");
                             return -1;
                         }
-
-                        // string translation = "";
-
-                        // string mask = gentempcode();
-                        // createVariableIfNotExists(mask, mask, NUMBER_ID, mask, false, true, true);
-
-                        // translation += mask + " = " + $2.label + " >> 31;\n";
-
-                        // string exclusiveOr = gentempcode();
-                        // createVariableIfNotExists(exclusiveOr, exclusiveOr, NUMBER_ID, exclusiveOr, false, true, true);
-
-                        // translation += exclusiveOr + " = " + mask + " ^ " + $2.label + ";\n";
-
-                        // string absolute = gentempcode();
-                        // createVariableIfNotExists(absolute, absolute, NUMBER_ID, absolute, false, true, true);
-
-                        // translation += absolute + " = " + exclusiveOr + " - " + mask + ";\n";
-
-                        // $$.label = gentempcode();
-                        // $$.type = NUMBER_ID;
-                        // createVariableIfNotExists($$.label, $$.label, $$.type, $$.label, true, true);
 
                         $$.translation = $2.translation + $$.label + " = absolute(" + $3.label + ");\n";
                     }

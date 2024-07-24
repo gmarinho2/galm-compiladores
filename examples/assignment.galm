@@ -1,22 +1,22 @@
-let assignment = 1
+let assignment = 1;
 
-assignment = 2
-assignment = assignment + 1
-assignment = assignment + 2
-assignment = assignment + 10
+assignment = 2;
+assignment = assignment + 1;
+assignment = assignment + 2;
+assignment = assignment + 10;
 
-assertEquals(assignment, 15)
+assertEquals(assignment, 15);
 
-let y = assignment
-let x = assignment = 3
+let y = assignment;
+let x = assignment = 3;
 
-assertEquals(x, 3)
-assertEquals(assignment, 3)
+assertEquals(x, 3);
+assertEquals(assignment, 3);
 
-let z = y == x
+let z = y == x;
 
-assertEquals(z, false)
+assertEquals(z, false);
 
-const a = assignment
-let b
-b = assignment
+const a = assignment;
+let b;
+b = assignment;

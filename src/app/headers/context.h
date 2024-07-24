@@ -14,6 +14,11 @@ namespace context {
     const string CHAR_ID = "char";
     const string VOID_ID = "void";
 
+    const string ARRAY_NUMBER_ID = "NumberArray";
+    const string ARRAY_BOOLEAN_ID = "BoolArray";
+    const string ARRAY_STRING_ID = "StringArray";
+    const string ARRAY_CHAR_ID = "CharArray";
+
     bool simplifyCode = false;
     bool testMode = false;
 
@@ -21,13 +26,241 @@ namespace context {
         return voidString == VOID_ID || voidString == "void*";
     }
 
-    string getRealTypeName(string type) {
-        if (type == "string") {
-            return "String";
+    string getArrayTypeFromType(string type) {
+        if (type.find("Array") != string::npos) {
+            return type;
         }
 
-        return type;
+        if (type == NUMBER_ID) {
+            return ARRAY_NUMBER_ID;
+        }
+
+        if (type == BOOLEAN_ID) {
+            return ARRAY_BOOLEAN_ID;
+        }
+
+        if (type == STRING_ID) {
+            return ARRAY_STRING_ID;
+        }
+
+        if (type == CHAR_ID) {
+            return ARRAY_CHAR_ID;
+        }
+
+        return VOID_ID;
     }
+
+    string getOriginalTypeFromArrayType(string arrayType) {
+        if (arrayType == ARRAY_NUMBER_ID) {
+            return NUMBER_ID;
+        }
+
+        if (arrayType == ARRAY_BOOLEAN_ID) {
+            return BOOLEAN_ID;
+        }
+
+        if (arrayType == ARRAY_STRING_ID) {
+            return STRING_ID;
+        }
+
+        if (arrayType == ARRAY_CHAR_ID) {
+            return CHAR_ID;
+        }
+
+        return VOID_ID;
+    }
+
+    class Array;
+    class Variable;
+    class SwitchCase;
+    class EndableStatement;
+    class Context;
+    class ContextStack;
+
+    ContextStack* contextStack;
+    list<Variable*> allVariables;
+    list<Array*> arrayCreationStack;
+
+    ContextStack* getContextStack();
+    list<Variable*> getAllVariables();
+
+    Array* createArray();
+    Array* topArrayStack();
+    Array* popArrayStack();
+    bool isArrayStackEmpty();
+
+    class Array {
+        private:
+            string type;
+
+            list<string> labels;
+            list<Array*> childs;
+        public:
+            Array() {
+                this->type = VOID_ID;
+            }
+
+            void addLabel(string label) {
+                if (childs.size() > 0) {
+                    yyerror("Expected a expression, but got a child array.");
+                }
+
+                labels.push_back(label);
+            }
+
+            void addChild(Array* child) {
+                if (labels.size() > 0) {
+                    yyerror("Expected a child array, but got a expression. Did you forget to use the [] operator?");
+                }
+
+                if (childs.size() > 0) {
+                    Array* firstChild = childs.front();
+                    int firstChildDepth = firstChild->getDepth();
+                    int firstChildElementsCount = firstChild->getElementsCount();
+
+                    if (child->getDepth() != firstChildDepth) {
+                        yyerror("The first child array has a depth of " + to_string(firstChildDepth) + ", but the new child array has a depth of " + to_string(child->getDepth()));
+                    } else if (child->getElementsCount() != firstChildElementsCount) {
+                        yyerror("The first child array has " + to_string(firstChildElementsCount) + " elements, but the new child array has " + to_string(child->getElementsCount()) + " elements");
+                    }
+                }
+
+                childs.push_back(child);
+            }
+
+            void setType(string type) {
+                this->type = type;
+            }
+
+            string getType() {
+                return type;
+            }
+
+            list<string> getLabels() {
+                return labels;
+            }
+
+            list<Array*> getChilds() {
+                return childs;
+            }
+
+            list<string> getAllLabels() {
+                list<string> allLabels;
+
+                if (labels.size() > 0) {
+                    return labels;
+                }
+
+                for (list<Array*>::iterator it = childs.begin(); it != childs.end(); ++it) {
+                    Array* child = *it;
+                    list<string> childLabels = child->getAllLabels();
+
+                    allLabels.insert(allLabels.end(), childLabels.begin(), childLabels.end());
+                }
+
+                return allLabels;
+            }
+
+            string getTranslation(string label, string sumSizeofNumber, string sumSizeofInt) {
+                string arrayType = getArrayTypeFromType(type);
+                string originalType = getOriginalTypeFromArrayType(type);
+
+                int* dimensions = getDimensions();
+
+                string translation = "";
+
+                list<string> allLabels = getAllLabels();
+
+                for (list<string>::iterator it = allLabels.begin(); it != allLabels.end(); ++it) {
+                    string currentLabelTranslation = split(*it, " - ")[1];
+
+                    translation += currentLabelTranslation;
+                }
+
+                translation += sumSizeofNumber + " = sizeof(" + originalType + ") * " + to_string(getElementsCount()) + ";\n";
+                translation += sumSizeofInt + " = sizeof(int) * " + to_string(dimensions[0] + 1) + ";\n";
+
+                translation += label + ".array = (" + originalType + "*) malloc(" + sumSizeofNumber + ");\n";
+                translation += label + ".dimensions = (int*) malloc(" + sumSizeofInt + ");\n";
+
+
+                for (int j = 0; j < (dimensions[0] + 1); j++) {
+                    translation += label + ".dimensions[" + to_string(j) + "] = " + to_string(dimensions[j]) + ";\n";
+                }
+
+                int i = 0;
+                for (list<string>::iterator it = allLabels.begin(); it != allLabels.end(); ++it, i++) {
+                    string currentLabel = split(*it, " - ")[0];
+                    translation += label + ".array[" + to_string(i) + "] = " + currentLabel + ";\n";
+                }
+
+                return translation;
+            }
+
+            int getLength() {
+                return labels.size() > 0 ? labels.size() : childs.size();
+            }
+
+            int getDepth() {
+                int depth = 0;
+
+                for (list<Array*>::iterator it = childs.begin(); it != childs.end(); ++it) {
+                    Array* child = *it;
+                    int childDepth = child->getDepth();
+
+                    if (childDepth > depth) {
+                        depth = childDepth;
+                    }
+                }
+
+                return depth + 1;
+            }
+
+            int getElementsCount() {
+                if (labels.size() > 0) {
+                    return labels.size();
+                }
+
+                if (childs.size() == 0) {
+                    return 0;
+                }
+
+                Array* firstChild = childs.front();
+                return firstChild->getElementsCount() * childs.size();
+            }
+
+            int* getDimensions() {
+                int depth = getDepth();
+                int* dimensions = new int[depth + 1];
+
+                int i = 0;
+                dimensions[i++] = depth;
+
+                if (labels.size() > 0) {
+                    dimensions[i] = labels.size();
+                    return dimensions;
+                }
+
+                list<Array*> childStack;
+
+                childStack.push_back(childs.front());
+                dimensions[i++] = childs.size();
+
+                while (childStack.size() > 0) {
+                    Array* currentChild = childStack.back();
+                    childStack.pop_back();
+
+                    if (currentChild->labels.size() > 0) {
+                        dimensions[i++] = currentChild->labels.size();
+                    } else {
+                        childStack.push_back(currentChild->childs.front());
+                        dimensions[i++] = currentChild->childs.size();
+                    }
+                }
+
+                return dimensions;
+            }
+    };
 
     class Variable {
         private:
@@ -45,6 +278,10 @@ namespace context {
                 this->varValue = varValue;
                 this->constant = constant;
                 this->temp = temp;
+            }
+
+            bool isArray() {
+                return varType.find("Array") != string::npos;
             }
 
             bool isTemp() {
@@ -91,7 +328,8 @@ namespace context {
             }
 
             string getTranslation() {
-                return getRealTypeName(getVarType()) + " " + varLabel;
+                string typeName = getVarType() == "string" ? "String" : getVarType();
+                return typeName + " " + varLabel;
             }
 
             bool isNumber() {
@@ -306,8 +544,6 @@ namespace context {
             }
     };
 
-    list<Variable*> allVariables;
-
     class ContextStack {
         private:
             list<Context*> contexts;
@@ -441,10 +677,7 @@ namespace context {
             }
     };
 
-    ContextStack* contextStack = new ContextStack();
-
     void init(int argc, char* argv[]) {
-
         if (argc > 1) {
             for (int i = 1; i < argc; i++) {
                 if (strcmp(argv[i], "--s") == 0) {
@@ -455,8 +688,30 @@ namespace context {
             }
         }
 
+        contextStack = new ContextStack();
+
         Context* globalContext = new Context();
         contextStack->push(globalContext);
+    }
+
+    Array* createArray() {
+        Array* array = new Array();
+        arrayCreationStack.push_back(array);
+        return array;
+    }
+
+    Array* topArrayStack() {
+        return arrayCreationStack.back();
+    }
+
+    Array* popArrayStack() {
+        Array* array = arrayCreationStack.back();
+        arrayCreationStack.pop_back();
+        return array;
+    }
+
+    bool isArrayStackEmpty() {
+        return arrayCreationStack.empty();
     }
 
     ContextStack* getContextStack() {

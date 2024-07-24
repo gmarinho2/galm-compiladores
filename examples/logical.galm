@@ -1,5 +1,5 @@
-let a = 1 and 20
-let b = !1
+let a = 1 and 20;
+let b = !1;
 
-assertEquals(a, true)
-assertEquals(b, false)
+assertEquals(a, true);
+assertEquals(b, false);

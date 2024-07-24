@@ -1,27 +1,27 @@
-let str1 = "Hello"
-let stringInterpol = `${str1}$ world!`
+let str1 = "Hello";
+let stringInterpol = `${str1}$ world!`;
 
-let boolean = true
-let numb = 1
-let character = 'c'
+let boolean = true;
+let numb = 1;
+let character = 'c';
 
-let superInterpol = `${boolean}$ ${numb}$ ${character}$`
-let concat = boolean <> " " <> numb <> " " <> character
+let superInterpol = `${boolean}$ ${numb}$ ${character}$`;
+let concat = boolean <> " " <> numb <> " " <> character;
 
 
-let str8 = "123" <> "asokdoasd" <> "stephen curry"
+let str8 = "123" <> "asokdoasd" <> "stephen curry";
 
-let variavelManeira
+let variavelManeira;
 
-variavelManeira = "asdokaoskd"
+variavelManeira = "asdokaoskd";
 
-assertEquals("asdokaoskd", variavelManeira)
-assertEquals(variavelManeira.length, 10)
+assertEquals("asdokaoskd", variavelManeira);
+assertEquals(variavelManeira.length, 10);
 
-assertEquals("123asokdoasdstephen curry", str8)
-assertEquals(str8.length, 25)
+assertEquals("123asokdoasdstephen curry", str8);
+assertEquals(str8.length, 25);
 
-assertEquals(str1, "Hello")
-assertEquals(stringInterpol, "Hello world!")
-assertEquals(superInterpol, "true 1 c")
-assertEquals(concat, "true 1 c")
+assertEquals(str1, "Hello");
+assertEquals(stringInterpol, "Hello world!");
+assertEquals(superInterpol, "true 1 c");
+assertEquals(concat, "true 1 c");

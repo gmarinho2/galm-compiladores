@@ -1,8 +1,8 @@
 
-let numberToNumber = 1 + 1 like number
-let booleanToNumber = true like number
-let charToNumber = 'a' like number
+let numberToNumber = 1 + 1 like number;
+let booleanToNumber = true like number;
+let charToNumber = 'a' like number;
 
-let numberToChar = 97 like char
+let numberToChar = 97 like char;
 
-let numberToBoo = 97 like bool
+let numberToBoo = 97 like bool;
