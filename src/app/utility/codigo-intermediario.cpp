@@ -44,6 +44,31 @@ typedef struct {
     int length;
 } String;
 
+typedef struct {
+    String* array;
+    int* dimensions;
+} StringArray;
+
+typedef struct {
+    number* array;
+    int* dimensions;
+} NumberArray;
+
+typedef struct {
+    bool* array;
+    int* dimensions;
+} BoolArray;
+
+typedef struct {
+    char* array;
+    int* dimensions;
+} CharArray;
+
+typedef struct {
+    void* array;
+    int* dimensions;
+} VoidArray;
+
 void dispatchError(string message, int currentLine);
 
 number sum(number a, number b);
@@ -60,6 +85,10 @@ number bitXor(number a, number b, int currentLine);
 number bitNot(number a, int currentLine);
 number bitShiftLeft(number a, number b, int currentLine);
 number bitShiftRight(number a, number b, int currentLine);
+
+number negative(number a);
+
+int getIntegerValueFromNumber(number a, int currentLine);
 
 int isGreaterThan(number a, number b);
 int isLessThan(number a, number b);
@@ -79,6 +108,10 @@ String concat(String dest, String source);
 String strCopy(String string);
 
 int strLen(char *str);
+
+int calculateArrayTotalSize(int* dimensions);
+int calculateArrayIndex(int* dimensions, int* indexes, int currentLine);
+NumberArray getArrayLength(int* dimensions);
 
 String readInput();
 
@@ -721,6 +754,20 @@ performShift:
     return result;
 }
 
+number negative(number a) {
+    number result;
+
+    if (a.isInteger) goto isIntegerIf;
+    result.isInteger = false;
+    result.value.real = -a.value.real;
+    goto endIf;
+isIntegerIf:
+    result.isInteger = true;
+    result.value.integer = -a.value.integer;
+endIf:
+    
+    return result;
+}   
 
 number intToFloat(number a) {
     if (!a.isInteger) return a;
@@ -901,12 +948,22 @@ compareValues:
     return result;
 }
 
+int getIntegerValueFromNumber(number a, int currentLine) {
+    int i1;
+
+    if (a.isInteger) goto isIntegerIf;
+    dispatchError("Expected integer value", currentLine);
+isIntegerIf:
+
+    i1 = a.value.integer;
+    
+    return i1;
+}
 
 char numberToChar(number a) {
     int i1;
 
     if (a.isInteger) goto integerIf;
-
 floatIf:
     i1 = (int) a.value.real;
     goto endIf;
@@ -1096,6 +1153,108 @@ startWhile:
 endWhile:
         
     return string;
+}
+
+int calculateArrayTotalSize(int* dimensions) {
+    int dimensionsLength = dimensions[0];
+
+    int i;
+    int totalSize;
+
+    int ifFlag;
+
+    i = 2;
+    totalSize = dimensions[1];
+
+startWhile:
+    ifFlag = i <= dimensionsLength;
+    if (!ifFlag) goto endWhile;
+    totalSize = totalSize * dimensions[i];
+    i = i + 1;
+    goto startWhile;
+endWhile:
+    
+    return totalSize;
+}
+
+int calculateArrayIndex(int* dimensions, int* indexes, int currentLine) {
+    int dimensionsLength;
+
+    dimensionsLength = dimensions[0];
+
+    if (dimensionsLength == indexes[0]) goto equalsDimensions;
+    dispatchError("Expected array selector with same number of dimensions of the original array.", currentLine);
+equalsDimensions:
+
+    int index;
+    int multiplicador = 1;
+
+    int ifFlag;
+
+    index = 0;
+    multiplicador = 1;
+
+startFor:
+    ifFlag = dimensionsLength > 0;
+    if (!ifFlag) goto endFor;
+    index = index + multiplicador * indexes[dimensionsLength];
+    multiplicador = multiplicador * dimensions[dimensionsLength];
+    dimensionsLength = dimensionsLength - 1;
+    goto startFor;
+endFor:
+
+    if (index >= 0) goto positiveIndex;
+    dispatchError("Array index out of bounds (negative number)", currentLine);
+positiveIndex:
+
+    int maxIndex;
+
+    maxIndex = calculateArrayTotalSize(dimensions);
+
+    if (index < maxIndex) goto indexInBounds;
+    dispatchError("Array index out of bounds (exceed maximum index)", currentLine);
+indexInBounds:
+
+    return index;
+}
+
+NumberArray getArrayLength(int* dimensions) {
+    int dimensionsLength;
+
+    NumberArray numberArray;
+    int totalDimensions;
+    int sizeOfSum;
+    int twoSizeOfSum;
+
+    dimensionsLength = dimensions[0];
+    totalDimensions = dimensionsLength + 1;
+    sizeOfSum = totalDimensions * sizeof(int);
+    twoSizeOfSum = 2 * sizeof(int);
+
+    numberArray.array = (number*) malloc(sizeOfSum);
+    numberArray.dimensions = (int*) malloc(twoSizeOfSum);
+
+    numberArray.array[0].isInteger = true;
+    numberArray.array[0].value.integer = dimensionsLength;
+    
+    numberArray.dimensions[0] = 1;
+    numberArray.dimensions[1] = totalDimensions;
+
+    int i;
+    int ifFlag;
+
+    i = 1;
+
+startFor:
+    ifFlag = i <= dimensionsLength;
+    if (!ifFlag) goto endFor;
+    numberArray.array[i].isInteger = true;
+    numberArray.array[i].value.integer = dimensions[i];
+    i = i + 1;
+    goto startFor;
+endFor:
+    
+    return numberArray;
 }
 
 String readInput() {

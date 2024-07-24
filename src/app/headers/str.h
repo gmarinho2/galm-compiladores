@@ -35,7 +35,9 @@ namespace str {
             res.push_back (token);
         }
 
-        res.push_back (str.substr (pos_start));
+        if (pos_start < str.length()) {
+            res.push_back (str.substr (pos_start));
+        }
         return res;
     }
 

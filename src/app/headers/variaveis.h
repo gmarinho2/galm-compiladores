@@ -16,6 +16,7 @@ namespace variaveis {
     unsigned long long int tempCodeCounter = 0;
     unsigned long long int varCodeCounter = 0;
     unsigned long long int labelCounter = 0;
+    unsigned long long int functionCounter = 0;
 
     typedef struct {
         string label;
@@ -34,8 +35,13 @@ namespace variaveis {
 
         return "t" + to_string(++tempCodeCounter);
     }
+
     string genlabelcode() {
         return "label_" + to_string(++labelCounter);
+    }
+
+    string genfunctioncode() {
+        return "f" + to_string(++functionCounter);
     }
 
     vector<string> utilitiesFunctionsFiles;
@@ -57,12 +63,12 @@ namespace variaveis {
 
         int assertCount = countSubstring(codigo, "assert");
 
-        string compilador = header;
-
-        compilador += "\nint main(void) {\n";
+        string compilador = simplifyCode ? "" : header;
 
         list<Variable*> allVars = getAllVariables();
         bool hasTemp = false;
+
+        compilador += "\n/* User Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
@@ -72,28 +78,43 @@ namespace variaveis {
                 continue;
             }
 
-            compilador += "\t" + var->getTranslation() + ";\n";
+            compilador += var->getTranslation() + ";\n";
         }
 
         if (hasTemp)
-            compilador += "\n\t/* Variáveis Temporárias */\n\n";
+            compilador += "\n/* Compiler Temporary Variables */\n\n";
 
         for (list<Variable*>::iterator it = allVars.begin(); it != allVars.end(); ++it) {
             Variable* var = *it;
 
             if (var->isTemp())
-                compilador += "\t" + var->getTranslation() + ";\n";
+                compilador += var->getTranslation() + ";\n";
         }
 
-        compilador += "\n" + codigo;
+        ContextStack *contextStack = getContextStack();
+        list<Function*> allFuncs = contextStack->getFunctions();
 
-        if (assertCount > 0) {
+        if (contextStack->getFunctions().size() > 0) {
+            compilador += "\n/* Functions */\n\n";
+
+            for (list<Function*>::iterator it = allFuncs.begin(); it != allFuncs.end(); ++it) {
+                Function* func = *it;
+
+                compilador += func->getDeclaration() + "\n";
+            }
+        }
+
+        compilador += "\nint main(void) {\n";
+
+        compilador += codigo;
+
+        if (assertCount > 0 && testMode) {
             compilador += "\tcout << \"\\033[1;32mAll of " + to_string(assertCount) + " assertions passed. Congrats!\\033[0m\\n\";\n";
         }
 
         compilador += "\treturn 0;\n}";
 
-        compilador += footer;
+        compilador += simplifyCode ? "" : footer;
 
         return compilador;
     }
@@ -105,7 +126,23 @@ namespace variaveis {
      */
 
     Variable* findVariableByName(string varName) {
-        return getContextStack()->findVariableByName(varName);
+        ContextStack* stack = getContextStack();
+
+        Function* creationFunction = topFunctionStack();
+
+        if (creationFunction != NULL) {
+            Parameter* param = creationFunction->findParameterByName(varName);
+
+            if (param != NULL) {
+                return new Variable(param->getName(), param->getNickname(), param->getType(), "", true, false);
+            }
+        }
+
+        return stack->findVariableByName(varName);
+    }
+
+    Function* findFunction(string functionName, string types) {
+        return getContextStack()->findFunction(functionName, types);
     }
 
     Variable* createVariableIfNotExists(string varName, string varLabel, string varType, string varValue, bool isConst = false, bool isTemp = false) {
@@ -114,12 +151,6 @@ namespace variaveis {
 
     bool isInterpretedAsNumeric(string type) {
         return type == NUMBER_ID || type == CHAR_ID || type == BOOLEAN_ID;
-    }
-
-    string toId(string typeId) {
-        if (typeId == "string") return "String";
-
-        return typeId;
     }
 
 };

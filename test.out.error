@@ -1,0 +1,7 @@
+output/parser.tab.c: In function ‘int yyparse()’:
+output/parser.tab.c:3857:18: warning: ‘void free(void*)’ called on unallocated object ‘yyssa’ [-Wfree-nonheap-object]
+ 3857 |     YYSTACK_FREE (yyss);
+output/parser.tab.c:1308:16: note: declared here
+ 1308 |     yy_state_t yyssa[YYINITDEPTH];
+      |                ^~~~~
+make: *** [Makefile:13: run] Error 1
