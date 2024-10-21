@@ -262,12 +262,6 @@ Caso o valor resultado esteja sendo representado por um **X** significa que a co
 |**Boolean**     |   Number (0 ou 1)  | Boolean      | **X**    |
 |**Character**   |   Number           | Boolean      | Character|
 
-# AINDA NÃO IMPLEMENTADAS:
-
-## Contextos para variáveis e funções
-## Funções
-## Pipe operator
-
 # Testes
 
 Foi projetado um ambiente de testes para que possamos fazer testes de regressão.
